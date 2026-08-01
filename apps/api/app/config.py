@@ -30,6 +30,20 @@ class Settings(BaseSettings):
     voice_provider: Literal["mock"] = "mock"
     ws_max_audio_chunk_bytes: int = 256_000
 
+    ai_provider: Literal["mock", "openai"] = "mock"
+    openai_api_key: str | None = None
+    openai_organization: str | None = None
+    openai_base_url: str | None = None
+    openai_llm_model: str = "gpt-4o-mini"
+    openai_structured_model: str = "gpt-4o-mini"
+    openai_streaming_model: str = "gpt-4o-mini"
+    openai_stt_model: str = "gpt-4o-transcribe"
+    openai_tts_model: str = "tts-1"
+    openai_tts_voice: str = "alloy"
+    ai_request_timeout_seconds: float = 60.0
+    ai_max_retries: int = 2
+    ai_retry_backoff_seconds: float = 0.5
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:

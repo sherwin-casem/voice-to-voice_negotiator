@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -17,4 +17,5 @@ class ApiResponse(BaseModel, Generic[T]):
 
 
 class HealthData(BaseModel):
-    status: str = Field(examples=["ok"])
+    status: Literal["ok", "degraded"] = Field(examples=["ok"])
+    database: Literal["ok", "error"] = Field(examples=["ok"])

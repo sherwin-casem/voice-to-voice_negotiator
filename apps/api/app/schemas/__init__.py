@@ -1,3 +1,3 @@
-from app.schemas.common import ApiResponse, HealthData
+from app.schemas.common import ApiError, ApiResponse, HealthData
 
-__all__ = ["ApiResponse", "HealthData"]
+__all__ = ["ApiError", "ApiResponse", "HealthData"]

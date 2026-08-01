@@ -1,8 +1,10 @@
+import pytest
+
+pytestmark = pytest.mark.feature
+
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
-
-import pytest
 
 from app.core.exceptions import ConflictError, InvalidStateError
 from app.db.enums import InterviewSessionStatus, InterviewType

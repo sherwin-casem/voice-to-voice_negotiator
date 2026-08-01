@@ -1,6 +1,8 @@
-import base64
-
 import pytest
+
+pytestmark = pytest.mark.feature
+
+import base64
 
 from app.modules.voice.pipeline.turn_buffer import TurnAudioBuffer
 

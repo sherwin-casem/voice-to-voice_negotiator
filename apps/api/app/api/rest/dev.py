@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from app.api.deps import get_interview_repository
+from app.modules.interview.deps import get_interview_repository
 from app.modules.interview.repository import InterviewRepository
 from app.schemas.common import ApiResponse
 

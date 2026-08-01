@@ -1,10 +1,10 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_async_session
+from app.db.health import check_database
 from app.schemas.common import ApiResponse, HealthData
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ async def health_check(
 ) -> ApiResponse[HealthData]:
     database_status = "ok"
     try:
-        await session.execute(text("SELECT 1"))
+        await check_database(session)
     except Exception:
         logger.exception("Database health check failed", extra={"component": "health"})
         database_status = "error"

@@ -24,7 +24,7 @@ Copy `.env.example` to `.env` at the repository root. The API loads root `.env` 
 ## Database
 
 ```bash
-docker compose up -d
+docker compose -f infrastructure/docker-compose.yml up -d
 uv run --directory apps/api alembic upgrade head
 ```
 

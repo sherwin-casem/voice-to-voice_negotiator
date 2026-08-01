@@ -5,13 +5,18 @@ AI-powered voice interview practice with multi-agent evaluation.
 ## Repository layout
 
 ```
-apps/
-  api/          FastAPI backend (Python, uv, pytest)
-  web/          Next.js frontend (TypeScript, Tailwind)
-packages/
-  shared/       Shared API contracts and TypeScript types
-docs/           Architecture and database design
-scripts/        Local development helpers
+voice-to-voice-negotiator/
+├── apps/
+│   ├── web/          Next.js, TypeScript, Tailwind CSS
+│   └── api/          FastAPI, uv, pytest, SQLAlchemy
+├── packages/
+│   └── shared/       Shared API contracts and TypeScript types
+├── docs/             Architecture and database design
+├── infrastructure/   Local Docker Compose (PostgreSQL)
+├── scripts/          Development helpers
+├── Agents.md
+├── README.md
+└── .env.example
 ```
 
 ## Prerequisites
@@ -32,7 +37,7 @@ cp .env.example .env
 ### 2. PostgreSQL
 
 ```bash
-docker compose up -d
+docker compose -f infrastructure/docker-compose.yml up -d
 ```
 
 ### 3. API

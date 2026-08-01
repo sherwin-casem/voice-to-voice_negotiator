@@ -1,1 +1,78 @@
-# voice-to-voice_negotiator
+# Voice-to-Voice Interview Negotiator
+
+AI-powered voice interview practice with multi-agent evaluation.
+
+## Repository layout
+
+```
+apps/
+  api/          FastAPI backend (Python, uv, pytest)
+  web/          Next.js frontend (TypeScript, Tailwind)
+packages/
+  shared/       Shared API contracts and TypeScript types
+docs/           Architecture and database design
+scripts/        Local development helpers
+```
+
+## Prerequisites
+
+- Node.js 20+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
+- Docker (for local PostgreSQL)
+
+## Quick start
+
+### 1. Environment
+
+```bash
+cp .env.example .env
+```
+
+### 2. PostgreSQL
+
+```bash
+docker compose up -d
+```
+
+### 3. API
+
+```bash
+uv sync --directory apps/api
+uv run --directory apps/api alembic upgrade head
+uv run --directory apps/api uvicorn app.main:app --reload --port 8000
+```
+
+API docs: http://localhost:8000/docs
+
+### 4. Web
+
+```bash
+npm install
+npm run dev:web
+```
+
+Web app: http://localhost:3000
+
+## Development scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/setup.ps1` | Install JS and Python dependencies |
+| `scripts/dev-api.ps1` | Run FastAPI with reload |
+| `scripts/dev-web.ps1` | Run Next.js dev server |
+| `scripts/dev-db.ps1` | Start PostgreSQL via Docker Compose |
+| `scripts/test-api.ps1` | Run API pytest suite |
+
+Unix equivalents are available as `.sh` files.
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Database schema](docs/database.md)
+- [Development guide](docs/development.md)
+- [Agents.md](Agents.md) — engineering principles
+
+## Current scope
+
+Initial scaffolding only: health endpoint, database models/migrations, and frontend shell. Authentication, OpenAI integration, and interview features are not implemented yet.

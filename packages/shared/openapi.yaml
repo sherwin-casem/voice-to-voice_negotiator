@@ -1,0 +1,52 @@
+openapi: 3.1.0
+info:
+  title: Voice-to-Voice Interview Negotiator API
+  version: 0.1.0
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check
+      tags: [health]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+components:
+  schemas:
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+          nullable: true
+    ApiResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+        error:
+          allOf:
+            - $ref: "#/components/schemas/ApiError"
+          nullable: true
+    HealthData:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+    HealthResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/HealthData"

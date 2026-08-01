@@ -1,0 +1,14 @@
+{
+  "name": "voice-to-voice-negotiator",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @voice/web",
+    "build:web": "npm run build --workspace @voice/web",
+    "lint:web": "npm run lint --workspace @voice/web",
+    "typecheck:shared": "npm run typecheck --workspace @voice/shared"
+  }
+}

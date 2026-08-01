@@ -53,8 +53,13 @@ Health check: `GET http://localhost:8000/api/v1/health`
 # Foundation tests (default)
 uv run --directory apps/api pytest -m "not feature"
 
+# AI integration layer
+uv run --directory apps/api pytest tests/ai -q
+
 # All tests including feature modules
 uv run --directory apps/api pytest
 ```
+
+See [AI integration layer](../../docs/ai-integration.md).
 
 OpenAPI docs: http://localhost:8000/docs

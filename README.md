@@ -75,6 +75,7 @@ Unix equivalents are available as `.sh` files.
 
 - [Architecture](docs/architecture.md)
 - [Database schema](docs/database.md)
+- [AI integration layer](docs/ai-integration.md)
 - [Development guide](docs/development.md)
 - [Agents.md](Agents.md) — engineering principles
 

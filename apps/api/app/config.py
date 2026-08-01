@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     api_port: int = 8000
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
+    voice_provider: Literal["mock"] = "mock"
+    ws_max_audio_chunk_bytes: int = 256_000
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:

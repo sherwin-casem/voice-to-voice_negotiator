@@ -22,3 +22,8 @@ class NotFoundError(AppError):
 class ConflictError(AppError):
     def __init__(self, message: str) -> None:
         super().__init__("CONFLICT", message, status_code=409)
+
+
+class InvalidStateError(AppError):
+    def __init__(self, message: str) -> None:
+        super().__init__("INVALID_STATE", message, status_code=409)

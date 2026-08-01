@@ -1,10 +1,13 @@
+import pytest
+
+pytestmark = pytest.mark.feature
+
 import json
 import uuid
 from collections import deque
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
-import pytest
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from app.db.enums import InterviewSessionStatus, InterviewType

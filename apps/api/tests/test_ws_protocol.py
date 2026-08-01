@@ -1,7 +1,9 @@
+import pytest
+
+pytestmark = pytest.mark.feature
+
 import json
 import uuid
-
-import pytest
 
 from app.modules.voice.protocol.parser import ProtocolValidationError, parse_client_envelope
 from app.modules.voice.protocol.types import AUDIO_INPUT, SESSION_START, SPEECH_END

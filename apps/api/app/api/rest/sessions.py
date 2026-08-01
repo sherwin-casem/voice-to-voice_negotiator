@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_interview_orchestrator, get_interview_repository, get_user_id
+from app.modules.interview.deps import get_interview_orchestrator, get_interview_repository, get_user_id
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.interview.repository import InterviewRepository
 from app.modules.interview.schemas import (

@@ -1,9 +1,11 @@
+import pytest
+
+pytestmark = pytest.mark.feature
+
 import base64
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock
-
-import pytest
 
 from app.db.enums import InterviewSessionStatus, InterviewType
 from app.modules.interview.orchestrator import QuestionResult

@@ -1,5 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.feature
+
 from app.ai.schemas.interviewer import InterviewerContext, PriorTurn
 from app.db.enums import InterviewType
 from app.modules.interview.interviewer_agent import InterviewerAgent, MockInterviewerLLMProvider

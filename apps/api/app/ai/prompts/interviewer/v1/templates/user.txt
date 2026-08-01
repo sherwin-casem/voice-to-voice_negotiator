@@ -1,0 +1,13 @@
+Generate the next interview question for this session.
+
+Previous turns:
+{prior_turns}
+
+Return JSON with:
+- question_text
+- topic_tag
+- follow_up_intent (optional)
+- is_follow_up (boolean)
+- should_end_session (boolean; true only if the interview should conclude)
+- difficulty_adjustment (optional: easier, same, harder)
+- prompt_version ("1.0")

@@ -1,4 +1,10 @@
-export type WsConnectionState = "idle" | "connecting" | "connected" | "disconnected" | "error";
+export type WsConnectionState =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnected"
+  | "error";
 
 export type InterviewerState =
   | "idle"

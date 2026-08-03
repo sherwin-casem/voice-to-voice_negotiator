@@ -1,7 +1,8 @@
 "use client";
 
+import type { InterviewSessionStatus, SessionResponse } from "@voice/shared";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AudioActivityIndicator } from "@/components/interview/AudioActivityIndicator";
 import { ConnectionStatus } from "@/components/interview/ConnectionStatus";
@@ -16,12 +17,10 @@ import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { useAppContext } from "@/context/AppProvider";
-import { useInterviewSocket } from "@/hooks/useInterviewSocket";
 import { useInterviewTimer } from "@/hooks/useInterviewTimer";
-import { useMicrophone } from "@/hooks/useMicrophone";
+import { useVoiceInterview } from "@/hooks/useVoiceInterview";
 import { ApiClientError } from "@/lib/api-client";
-import { endSession, getSession, startSession } from "@/lib/interview-api";
-import type { SessionResponse } from "@voice/shared";
+import { getSession } from "@/lib/interview-api";
 
 export default function LiveInterviewPage() {
   const params = useParams<{ sessionId: string }>();
@@ -35,8 +34,40 @@ export default function LiveInterviewPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
 
-  const live = useInterviewSocket(sessionId, userId);
-  const microphone = useMicrophone();
+  const refreshSession = useCallback(async () => {
+    if (!userId || !sessionId) {
+      return;
+    }
+    try {
+      const loaded = await getSession(userId, sessionId);
+      setSession(loaded);
+    } catch (caught) {
+      setLoadError(
+        caught instanceof ApiClientError ? caught.message : "Unable to refresh session.",
+      );
+    }
+  }, [sessionId, userId]);
+
+  const voice = useVoiceInterview(sessionId, userId, {
+    onSessionStatusChange: (status, questionCount) => {
+      setSession((previous) =>
+        previous
+          ? {
+              ...previous,
+              status: status as InterviewSessionStatus,
+              question_count: questionCount,
+            }
+          : previous,
+      );
+    },
+    onSessionEnded: () => {
+      void refreshSession();
+    },
+    onTurnComplete: () => {
+      void refreshSession();
+    },
+  });
+
   const elapsedSeconds = useInterviewTimer(session?.status === "active");
 
   useEffect(() => {
@@ -73,22 +104,19 @@ export default function LiveInterviewPage() {
 
   useEffect(() => {
     if (userId && sessionId) {
-      live.connect();
+      voice.connect();
     }
-  }, [live.connect, sessionId, userId]);
+  }, [sessionId, userId, voice.connect]);
 
   async function handleStartInterview() {
-    if (!userId) {
-      return;
-    }
     setIsStarting(true);
+    setLoadError(null);
     try {
-      const updated = await startSession(userId, sessionId);
-      setSession(updated);
-      live.startInterview();
+      await voice.startInterview();
+      await refreshSession();
     } catch (caught) {
       setLoadError(
-        caught instanceof ApiClientError ? caught.message : "Unable to start interview.",
+        caught instanceof Error ? caught.message : "Unable to start voice interview.",
       );
     } finally {
       setIsStarting(false);
@@ -96,32 +124,39 @@ export default function LiveInterviewPage() {
   }
 
   async function handleEndInterview() {
-    if (!userId) {
-      return;
-    }
     setIsEnding(true);
+    setLoadError(null);
     try {
-      await endSession(userId, sessionId);
-      live.disconnect();
-      microphone.disable();
+      await voice.endInterview();
+      voice.disconnect();
+      await refreshSession();
       router.push(`/interviews/${sessionId}/results`);
     } catch (caught) {
-      setLoadError(caught instanceof ApiClientError ? caught.message : "Unable to end interview.");
+      setLoadError(
+        caught instanceof Error ? caught.message : "Unable to end interview gracefully.",
+      );
     } finally {
       setIsEnding(false);
     }
   }
 
   async function handleToggleMic() {
-    if (microphone.isRecording) {
-      microphone.stopRecording();
+    if (voice.isRecording) {
+      voice.pauseAnswer();
       return;
     }
-    if (!microphone.isEnabled) {
-      await microphone.enable();
-    }
-    microphone.startRecording();
+    await voice.beginAnswer();
   }
+
+  const canStartInterview =
+    voice.isSessionReady &&
+    !voice.isInterviewStarted &&
+    (session?.status === "configured" || session?.status === "active");
+
+  const canAnswer =
+    voice.isInterviewStarted &&
+    voice.connectionState === "connected" &&
+    (voice.isAwaitingAnswer || voice.interviewerState === "listening");
 
   if (isLoading) {
     return <Spinner label="Loading live interview" />;
@@ -138,14 +173,16 @@ export default function LiveInterviewPage() {
         description="Practice with the AI interviewer in real time."
         actions={
           <>
-            {session?.status !== "active" ? (
+            {canStartInterview ? (
               <Button onClick={handleStartInterview} disabled={isStarting}>
                 Start interview
               </Button>
             ) : null}
-            <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
-              End interview
-            </Button>
+            {voice.isInterviewStarted ? (
+              <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
+                End interview
+              </Button>
+            ) : null}
             <ButtonLink href={`/interviews/${sessionId}/results`} variant="secondary">
               View results
             </ButtonLink>
@@ -159,10 +196,18 @@ export default function LiveInterviewPage() {
         </div>
       ) : null}
 
-      {live.errorMessage ? (
+      {voice.errorMessage ? (
         <div className="mb-6">
           <Alert variant="warning" title="Connection issue">
-            {live.errorMessage}
+            {voice.errorMessage}
+          </Alert>
+        </div>
+      ) : null}
+
+      {voice.permissionDenied ? (
+        <div className="mb-6">
+          <Alert variant="warning" title="Microphone blocked">
+            Allow microphone access in your browser settings to answer by voice.
           </Alert>
         </div>
       ) : null}
@@ -172,30 +217,28 @@ export default function LiveInterviewPage() {
           {session ? (
             <InterviewStatusPanel status={session.status} questionCount={session.question_count} />
           ) : null}
-          <InterviewerStatePanel state={live.interviewerState} />
-          <ConnectionStatus state={live.connectionState} />
+          <InterviewerStatePanel state={voice.interviewerState} />
+          <ConnectionStatus state={voice.connectionState} />
           <InterviewTimer elapsedSeconds={elapsedSeconds} />
         </div>
 
         <div className="space-y-6 lg:col-span-2">
           <CurrentQuestion
-            question={live.currentQuestion}
-            sequenceNum={live.currentQuestionSequence}
+            question={voice.currentQuestion}
+            sequenceNum={voice.currentQuestionSequence}
           />
-          <LiveTranscript entries={live.transcript} />
+          <LiveTranscript entries={voice.transcript} />
           <div className="grid gap-6 md:grid-cols-2">
             <MicControls
-              isEnabled={microphone.isEnabled}
-              isRecording={microphone.isRecording}
-              permissionDenied={microphone.permissionDenied}
+              isEnabled={voice.isMicEnabled}
+              isRecording={voice.isRecording}
+              permissionDenied={voice.permissionDenied}
+              canAnswer={canAnswer}
               onToggleMic={handleToggleMic}
-              onFinishAnswer={live.finishAnswer}
-              disabled={session?.status !== "active"}
+              onFinishAnswer={voice.finishAnswer}
+              disabled={!voice.isInterviewStarted}
             />
-            <AudioActivityIndicator
-              level={microphone.level}
-              isActive={microphone.isRecording}
-            />
+            <AudioActivityIndicator level={voice.audioLevel} isActive={voice.isRecording} />
           </div>
         </div>
       </div>

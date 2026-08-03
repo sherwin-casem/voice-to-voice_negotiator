@@ -8,6 +8,7 @@ const STATE_LABELS: Record<WsConnectionState, string> = {
   idle: "Not connected",
   connecting: "Connecting",
   connected: "Connected",
+  reconnecting: "Reconnecting",
   disconnected: "Disconnected",
   error: "Connection error",
 };
@@ -16,6 +17,7 @@ const STATE_STYLES: Record<WsConnectionState, string> = {
   idle: "bg-zinc-100 text-zinc-700",
   connecting: "bg-amber-50 text-amber-700",
   connected: "bg-emerald-50 text-emerald-700",
+  reconnecting: "bg-amber-50 text-amber-700",
   disconnected: "bg-zinc-100 text-zinc-700",
   error: "bg-red-50 text-red-700",
 };

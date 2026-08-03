@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:voice-ws": "node scripts/test-voice-ws.mjs"
   },
   "dependencies": {
     "@voice/shared": "file:../../packages/shared",

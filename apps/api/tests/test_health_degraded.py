@@ -36,7 +36,7 @@ async def test_health_check_reports_degraded_when_database_unavailable(
 ) -> None:
     response = await degraded_client.get("/api/v1/health")
 
-    assert response.status_code == 200
+    assert response.status_code == 503
     body = response.json()
     assert body["data"]["status"] == "degraded"
     assert body["data"]["database"] == "error"

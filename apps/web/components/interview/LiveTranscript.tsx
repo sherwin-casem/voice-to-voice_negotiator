@@ -1,6 +1,9 @@
-import type { TranscriptEntry } from "@/types/websocket";
+"use client";
 
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { useState } from "react";
+
+import type { TranscriptEntry } from "@/types/websocket";
+import { Card, CardTitle } from "@/components/ui/Card";
 import { cn } from "@/lib/format";
 
 function speakerLabel(speaker: TranscriptEntry["speaker"]): string {
@@ -14,33 +17,53 @@ function speakerLabel(speaker: TranscriptEntry["speaker"]): string {
 }
 
 export function LiveTranscript({ entries }: { entries: TranscriptEntry[] }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <Card className="flex min-h-72 flex-col" aria-labelledby="live-transcript-title">
-      <CardTitle id="live-transcript-title">Live transcript</CardTitle>
-      <CardDescription>Partial and final transcript segments appear here.</CardDescription>
-      <div
-        className="mt-4 flex-1 space-y-3 overflow-y-auto rounded-xl border border-zinc-100 bg-zinc-50 p-3"
-        aria-live="polite"
-        aria-relevant="additions text"
+    <Card className="flex flex-col" aria-labelledby="live-transcript-title">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="flex w-full items-center justify-between text-left"
+        aria-expanded={expanded}
+        aria-controls="live-transcript-panel"
       >
-        {entries.length === 0 ? (
-          <p className="text-sm text-zinc-500">Transcript will appear once the interview starts.</p>
-        ) : (
-          entries.map((entry) => (
-            <article key={entry.id} className="text-sm">
-              <header className="mb-1 flex items-center gap-2">
-                <span className="font-medium text-zinc-800">{speakerLabel(entry.speaker)}</span>
-                {entry.isPartial ? (
-                  <span className="text-xs text-zinc-500">(partial)</span>
-                ) : null}
-              </header>
-              <p className={cn("leading-6 text-zinc-700", entry.isPartial && "italic")}>
-                {entry.text}
-              </p>
-            </article>
-          ))
-        )}
-      </div>
+        <CardTitle id="live-transcript-title">Transcript</CardTitle>
+        <span className="text-xs text-[var(--text-muted)]">{expanded ? "Hide" : "Show"}</span>
+      </button>
+      {expanded ? (
+        <div
+          id="live-transcript-panel"
+          className="mt-4 max-h-48 space-y-3 overflow-y-auto rounded-xl border border-[var(--border-glass)] bg-black/20 p-3"
+          aria-live="polite"
+          aria-relevant="additions text"
+        >
+          {entries.length === 0 ? (
+            <p className="text-sm text-[var(--text-dim)]">
+              Transcript will appear once the interview starts.
+            </p>
+          ) : (
+            entries.map((entry) => (
+              <article key={entry.id} className="text-sm">
+                <header className="mb-1 flex items-center gap-2">
+                  <span className="font-medium text-teal-300/90">{speakerLabel(entry.speaker)}</span>
+                  {entry.isPartial ? (
+                    <span className="text-xs text-[var(--text-dim)]">(partial)</span>
+                  ) : null}
+                </header>
+                <p
+                  className={cn(
+                    "leading-6 text-[var(--text-muted)]",
+                    entry.isPartial && "italic",
+                  )}
+                >
+                  {entry.text}
+                </p>
+              </article>
+            ))
+          )}
+        </div>
+      ) : null}
     </Card>
   );
 }

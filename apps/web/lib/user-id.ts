@@ -1,3 +1,5 @@
+import { env } from "@/lib/env";
+
 const STORAGE_KEY = "vvn-dev-user-id";
 
 function generateUuid(): string {
@@ -9,7 +11,7 @@ function generateUuid(): string {
 
 export function getDevUserId(): string {
   if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_DEV_USER_ID ?? "00000000-0000-4000-8000-000000000001";
+    return env.devUserId ?? "00000000-0000-4000-8000-000000000001";
   }
 
   const existing = window.localStorage.getItem(STORAGE_KEY);

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/Button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { GlassPanel } from "@/components/ui/GlassPanel";
 
 export function MicControls({
   isEnabled,
@@ -9,6 +9,7 @@ export function MicControls({
   onToggleMic,
   onFinishAnswer,
   disabled,
+  compact = false,
 }: {
   isEnabled: boolean;
   isRecording: boolean;
@@ -17,37 +18,42 @@ export function MicControls({
   onToggleMic: () => void;
   onFinishAnswer: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   return (
-    <Card aria-labelledby="mic-controls-title">
-      <CardTitle id="mic-controls-title">Microphone</CardTitle>
-      <CardDescription>
-        Enable your microphone to practice voice answers. Finish answer when you are done speaking.
-      </CardDescription>
-      <div className="mt-4 flex flex-wrap gap-2">
+    <GlassPanel className={compact ? "p-3" : "p-4"}>
+      {!compact ? (
+        <p className="text-section-label mb-3">Microphone</p>
+      ) : null}
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <Button
           variant={isRecording ? "danger" : "secondary"}
           onClick={onToggleMic}
           disabled={disabled || permissionDenied || !canAnswer}
           aria-pressed={isRecording}
+          className={compact ? "text-xs px-4 py-1.5" : undefined}
         >
           {permissionDenied
-            ? "Microphone blocked"
+            ? "Mic blocked"
             : isRecording
-              ? "Stop microphone"
+              ? "Stop"
               : isEnabled
-                ? "Start microphone"
-                : "Enable microphone"}
+                ? "Start mic"
+                : "Enable mic"}
         </Button>
-        <Button onClick={onFinishAnswer} disabled={disabled || !isEnabled || !canAnswer}>
+        <Button
+          onClick={onFinishAnswer}
+          disabled={disabled || !isEnabled || !canAnswer}
+          className={compact ? "text-xs px-4 py-1.5" : undefined}
+        >
           Finish answer
         </Button>
       </div>
       {permissionDenied ? (
-        <p className="mt-3 text-sm text-red-600" role="alert">
-          Microphone access was denied. Check browser permissions and try again.
+        <p className="mt-2 text-center text-xs text-red-400" role="alert">
+          Microphone access denied. Check browser permissions.
         </p>
       ) : null}
-    </Card>
+    </GlassPanel>
   );
 }

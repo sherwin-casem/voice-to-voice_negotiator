@@ -4,6 +4,7 @@ import time
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
+from app.config import settings
 from app.core.exceptions import AppError
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.voice.pipeline.turn_buffer import TurnAudioBuffer
@@ -49,7 +50,10 @@ class VoicePipeline:
         self._stt = stt_provider
         self._tts = tts_provider
         self._emit = emit
-        self._turn_buffer = TurnAudioBuffer()
+        self._turn_buffer = TurnAudioBuffer(
+            max_chunk_bytes=settings.ws_max_audio_chunk_bytes,
+            max_turn_bytes=settings.ws_max_turn_audio_bytes,
+        )
         self._current_question_id: UUID | None = None
         self._processing = False
         self._cancel_tts = False

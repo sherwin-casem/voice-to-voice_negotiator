@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import {
   AnswerEvaluationList,
@@ -15,13 +15,11 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, PreviewDataBanner, Spinner } from "@/components/ui/Alert";
 import { SessionStatusBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { useAppContext } from "@/context/AppProvider";
-import { ApiClientError } from "@/lib/api-client";
+import { useSession } from "@/hooks/useSession";
 import { formatDate } from "@/lib/format";
 import { buildPreviewEvaluation } from "@/lib/mocks/evaluation";
-import { getSession } from "@/lib/interview-api";
-import type { SessionResponse } from "@voice/shared";
 
 export default function InterviewResultsPage() {
   const params = useParams<{ sessionId: string }>();
@@ -29,42 +27,11 @@ export default function InterviewResultsPage() {
   const sessionId = params.sessionId;
   const isPreviewMode = searchParams.get("preview") === "1";
   const { userId } = useAppContext();
-
-  const [session, setSession] = useState<SessionResponse | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(!isPreviewMode);
-
-  useEffect(() => {
-    if (isPreviewMode || !userId || !sessionId) {
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoading(true);
-
-    getSession(userId, sessionId)
-      .then((loaded) => {
-        if (!cancelled) {
-          setSession(loaded);
-        }
-      })
-      .catch((caught) => {
-        if (!cancelled) {
-          setLoadError(
-            caught instanceof ApiClientError ? caught.message : "Unable to load session.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isPreviewMode, sessionId, userId]);
+  const { session, error: loadError, isLoading: sessionLoading } = useSession(
+    isPreviewMode ? "" : userId,
+    isPreviewMode ? "" : sessionId,
+  );
+  const isLoading = isPreviewMode ? false : sessionLoading;
 
   const evaluation = useMemo(
     () => buildPreviewEvaluation(session?.title ?? "Interview session"),
@@ -97,26 +64,30 @@ export default function InterviewResultsPage() {
 
       {session ? (
         <Card className="mb-6">
-          <CardTitle>Session summary</CardTitle>
+          <CardHeading>Session summary</CardHeading>
           <CardDescription>Loaded from the interview session API.</CardDescription>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-zinc-600">Title</dt>
-              <dd className="font-medium text-zinc-900">{session.title ?? "Untitled session"}</dd>
+              <dt className="text-[var(--text-muted)]">Title</dt>
+              <dd className="font-medium text-[var(--text-primary)]">
+                {session.title ?? "Untitled session"}
+              </dd>
             </div>
             <div>
-              <dt className="text-zinc-600">Status</dt>
+              <dt className="text-[var(--text-muted)]">Status</dt>
               <dd className="mt-1">
                 <SessionStatusBadge status={session.status} />
               </dd>
             </div>
             <div>
-              <dt className="text-zinc-600">Questions asked</dt>
-              <dd className="font-medium text-zinc-900">{session.question_count}</dd>
+              <dt className="text-[var(--text-muted)]">Questions asked</dt>
+              <dd className="font-medium text-[var(--text-primary)]">{session.question_count}</dd>
             </div>
             <div>
-              <dt className="text-zinc-600">Ended</dt>
-              <dd className="font-medium text-zinc-900">{formatDate(session.ended_at)}</dd>
+              <dt className="text-[var(--text-muted)]">Ended</dt>
+              <dd className="font-medium text-[var(--text-primary)]">
+                {formatDate(session.ended_at)}
+              </dd>
             </div>
           </dl>
         </Card>

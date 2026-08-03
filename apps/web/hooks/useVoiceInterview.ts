@@ -81,7 +81,10 @@ export function useVoiceInterview(
   const allowReconnectRef = useRef(true);
   const isInterviewStartedRef = useRef(false);
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   const appendSystemMessage = useCallback((text: string) => {
     setTranscript((previous) => [

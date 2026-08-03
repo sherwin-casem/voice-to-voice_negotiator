@@ -11,6 +11,8 @@ from app.config import settings
 from app.core.error_handlers import register_error_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import RequestIdMiddleware
+from app.core.security import SecurityHeadersMiddleware
+from app.core.startup import validate_settings
 from app.db.session import async_engine, engine
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
+    validate_settings(settings)
     logger.info(
         "Starting API",
         extra={"component": "startup", "app_env": settings.app_env},
@@ -30,14 +33,18 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 def create_app() -> FastAPI:
+    docs_url = "/docs" if settings.is_development else None
+    redoc_url = "/redoc" if settings.is_development else None
+
     app = FastAPI(
         title="Voice-to-Voice Interview Negotiator API",
         version="0.1.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url=docs_url,
+        redoc_url=redoc_url,
         lifespan=lifespan,
     )
 
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestIdMiddleware)
     app.add_middleware(
         CORSMiddleware,

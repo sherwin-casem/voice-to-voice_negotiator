@@ -2,11 +2,13 @@ export function cn(...classes: Array<string | false | null | undefined>): string
   return classes.filter(Boolean).join(" ");
 }
 
+const DISPLAY_LOCALE = "en-US";
+
 export function formatDate(value: string | null): string {
   if (!value) {
     return "—";
   }
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));

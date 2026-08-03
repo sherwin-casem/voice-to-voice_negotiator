@@ -1,4 +1,7 @@
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
+
+const articleClass =
+  "rounded-xl border border-[var(--border-glass)] bg-white/5 p-4";
 
 export function AnswerEvaluationList({
   items,
@@ -12,19 +15,21 @@ export function AnswerEvaluationList({
 }) {
   return (
     <Card aria-labelledby="answer-evaluation-title">
-      <CardTitle id="answer-evaluation-title">Detailed answer evaluation</CardTitle>
+      <CardHeading id="answer-evaluation-title">Detailed answer evaluation</CardHeading>
       <CardDescription>Per-question feedback from the evaluation pipeline.</CardDescription>
       <div className="mt-4 space-y-4">
         {items.map((item, index) => (
-          <article key={`${item.question}-${index}`} className="rounded-xl border border-zinc-100 p-4">
+          <article key={`${item.question}-${index}`} className={articleClass}>
             <header className="flex flex-wrap items-start justify-between gap-2">
-              <h3 className="text-sm font-medium text-zinc-900">{item.question}</h3>
-              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">
+              <h3 className="text-sm font-medium text-[var(--text-primary)]">{item.question}</h3>
+              <span className="rounded-full bg-teal-500/20 px-2 py-0.5 text-xs font-medium text-teal-300">
                 Score {item.score}
               </span>
             </header>
-            <p className="mt-2 text-sm italic text-zinc-600">&ldquo;{item.answer_excerpt}&rdquo;</p>
-            <p className="mt-2 text-sm leading-6 text-zinc-700">{item.feedback}</p>
+            <p className="mt-2 text-sm italic text-[var(--text-muted)]">
+              &ldquo;{item.answer_excerpt}&rdquo;
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{item.feedback}</p>
           </article>
         ))}
       </div>
@@ -39,13 +44,13 @@ export function BetterAnswersList({
 }) {
   return (
     <Card aria-labelledby="better-answers-title">
-      <CardTitle id="better-answers-title">AI-recommended better answers</CardTitle>
+      <CardHeading id="better-answers-title">AI-recommended better answers</CardHeading>
       <CardDescription>Example responses aligned with coaching guidance.</CardDescription>
       <div className="mt-4 space-y-4">
         {items.map((item, index) => (
-          <article key={`${item.question}-${index}`} className="rounded-xl border border-zinc-100 p-4">
-            <h3 className="text-sm font-medium text-zinc-900">{item.question}</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-700">{item.example}</p>
+          <article key={`${item.question}-${index}`} className={articleClass}>
+            <h3 className="text-sm font-medium text-[var(--text-primary)]">{item.question}</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{item.example}</p>
           </article>
         ))}
       </div>
@@ -60,17 +65,15 @@ export function PracticeRecommendations({
 }) {
   return (
     <Card aria-labelledby="practice-recommendations-title">
-      <CardTitle id="practice-recommendations-title">Practice recommendations</CardTitle>
+      <CardHeading id="practice-recommendations-title">Practice recommendations</CardHeading>
       <CardDescription>Actionable drills for your next session.</CardDescription>
       <div className="mt-4 space-y-4">
         {items.map((item) => (
-          <article key={item.title} className="rounded-xl border border-zinc-100 p-4">
-            <h3 className="text-sm font-medium text-zinc-900">{item.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-700">{item.instructions}</p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Success criteria
-            </p>
-            <p className="mt-1 text-sm leading-6 text-zinc-700">{item.success_criteria}</p>
+          <article key={item.title} className={articleClass}>
+            <h3 className="text-sm font-medium text-[var(--text-primary)]">{item.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{item.instructions}</p>
+            <p className="text-section-label mt-3">Success criteria</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">{item.success_criteria}</p>
           </article>
         ))}
       </div>

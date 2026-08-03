@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.db.enums import AgentName, EvaluationRunStatus, EvaluationScope, InterviewType
 
+if TYPE_CHECKING:
+    from app.ai.schemas.evaluation.judge import JudgeEvaluationOutput
 
 @dataclass(frozen=True)
 class ConversationTurn:
@@ -14,6 +16,15 @@ class ConversationTurn:
     question_text: str
     answer_text: str
     topic_tag: str | None = None
+
+
+@dataclass(frozen=True)
+class CandidateProfile:
+    """Optional candidate background used by the improvement coach."""
+
+    summary: str | None = None
+    target_role: str | None = None
+    experience_level: str | None = None
 
 
 @dataclass(frozen=True)
@@ -33,6 +44,8 @@ class EvaluationContext:
     prior_turns: list[ConversationTurn] = field(default_factory=list)
     session_id: UUID | None = None
     answer_id: UUID | None = None
+    candidate_profile: CandidateProfile | None = None
+    historical_weaknesses: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -71,6 +84,20 @@ class AgentExecutionResult:
 
 
 @dataclass(frozen=True)
+class CoachInput:
+    """Inputs for the improvement coach after specialist and judge evaluation."""
+
+    context: EvaluationContext
+    specialist_results: list[AgentExecutionResult]
+    judge_output: "JudgeEvaluationOutput"
+    historical_weaknesses: list[str] = field(default_factory=list)
+
+    @property
+    def candidate_profile(self) -> CandidateProfile | None:
+        return self.context.candidate_profile
+
+
+@dataclass(frozen=True)
 class EvaluationRunResult:
     scope: EvaluationScope
     orchestration_version: str
@@ -78,6 +105,7 @@ class EvaluationRunResult:
     started_at: datetime
     completed_at: datetime
     judge_result: AgentExecutionResult | None = None
+    coach_result: AgentExecutionResult | None = None
 
     @property
     def status(self) -> EvaluationRunStatus:

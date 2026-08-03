@@ -1,0 +1,17 @@
+Question:
+{question_text}
+
+Candidate answer:
+{answer_text}
+
+Judge evaluation (scores 0–100):
+{judge_output}
+
+Specialist agent outputs:
+{specialist_outputs}
+
+Weakest dimensions: {weakest_dimensions}
+Strongest dimensions: {strongest_dimensions}
+Overall score: {overall_score}
+
+Produce actionable coaching with evidence citations from the answer.

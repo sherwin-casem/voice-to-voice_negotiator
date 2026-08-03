@@ -1,5 +1,6 @@
 from app.ai.providers.factory import build_ai_providers
 from app.config import Settings, settings
+from app.modules.evaluation.agents.coach import ImprovementCoachAgent
 from app.modules.evaluation.agents.judge import JudgeAgent
 from app.modules.evaluation.agents.registry import build_specialist_evaluators
 from app.modules.evaluation.mock_llm import MockEvaluationLLMProvider
@@ -18,7 +19,8 @@ def build_evaluation_service(app_settings: Settings | None = None) -> Evaluation
 
     evaluators = build_specialist_evaluators(llm, model_id=model_id)
     judge = JudgeAgent(llm, model_id=model_id)
-    return EvaluationService(evaluators, judge)
+    coach = ImprovementCoachAgent(llm, model_id=model_id)
+    return EvaluationService(evaluators, judge, coach)
 
 
 def get_evaluation_service() -> EvaluationService:

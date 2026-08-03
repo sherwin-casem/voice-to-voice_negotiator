@@ -5,12 +5,18 @@ from pydantic import BaseModel
 from app.ai.schemas.evaluation.behavioral import BehavioralDimensions, BehavioralEvaluationOutput
 from app.ai.schemas.evaluation.communication import CommunicationDimensions, CommunicationEvaluationOutput
 from app.ai.schemas.evaluation.hiring_manager import HiringManagerDimensions, HiringManagerEvaluationOutput
+from app.ai.schemas.evaluation.coach import (
+    ImprovementCoachOutput,
+    PracticeExercise,
+    PriorityCoachingFocus,
+)
 from app.ai.schemas.evaluation.judge import EvidenceItem, JudgeSynthesisOutput, PriorityImprovement
 from app.ai.schemas.evaluation.relevance import RelevanceDimensions, RelevanceEvaluationOutput
 from app.ai.schemas.evaluation.technical import TechnicalDimensions, TechnicalEvaluationOutput
 from app.db.enums import HireRecommendation
 from app.modules.evaluation.agents.base import BaseEvaluator, _dimension
 from app.modules.evaluation.judge.scoring_model import ScoringBaseline
+from app.modules.evaluation.schemas import CoachInput
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -165,4 +171,118 @@ def build_mock_judge_synthesis(context, baseline: ScoringBaseline) -> JudgeSynth
             f"Weakest dimensions: {', '.join(baseline.weakest_dimensions) or 'n/a'}."
         ),
         prompt_version="1.0",
+    )
+
+
+def build_mock_coach_output(coach_input: CoachInput) -> ImprovementCoachOutput:
+    context = coach_input.context
+    judge = coach_input.judge_output
+    excerpt = context.answer_text[:90].strip()
+    if len(context.answer_text) > 90:
+        excerpt += "..."
+
+    weakest = judge.weakest_dimensions[0] if judge.weakest_dimensions else "structure"
+    strongest = judge.strongest_dimensions[0] if judge.strongest_dimensions else "relevance"
+    historical = coach_input.historical_weaknesses or context.historical_weaknesses
+
+    if judge.overall_score >= 75:
+        did_well = [
+            f"You directly addressed the question and showed strength in {strongest}, "
+            f"especially where you stated: \"{excerpt}\"",
+        ]
+        should_improve = [
+            f"To reach the next level, tighten the {weakest} dimension by ending with a clearer takeaway "
+            "before adding supporting detail.",
+        ]
+        priority_improvement = (
+            "Your answer is strong but buries the headline. Lead with the main conclusion in one sentence, "
+            "then support it with the details you already included."
+        )
+        example = (
+            "Start with: 'The root cause was a downstream dependency timeout, which we fixed by adding circuit "
+            "breakers and cache warming.' Then walk through metrics, traces, and deploy checks."
+        )
+    elif judge.overall_score <= 45:
+        did_well = [
+            "You attempted to respond to the question rather than skipping it, which gives a baseline to refine.",
+        ]
+        should_improve = [
+            "The answer stays abstract and does not walk through a concrete situation, action, and outcome "
+            f"with specific details from your experience.",
+        ]
+        if context.interview_type.value in {"behavioral", "leadership", "hr"}:
+            priority_improvement = (
+                "Your answer opens with vague intent ('I guess I would...') instead of a specific example. "
+                "Replace that opener with one sentence naming the situation and your role before describing actions."
+            )
+            example = (
+                "Instead of 'I guess I would try to handle it somehow,' try: 'In my last role as team lead, "
+                "two engineers disagreed on an API contract. I scheduled a 30-minute design review, documented "
+                "decision criteria, and we shipped a compromise within a week.'"
+            )
+        else:
+            priority_improvement = (
+                "Your answer lists intentions but not a diagnostic sequence tied to the question. "
+                "Name the first signal you would inspect, the tool or metric you would check, and the decision "
+                "that narrows the bottleneck."
+            )
+            example = (
+                "Open with: 'I would start with p95 latency by endpoint in our APM, compare against the last "
+                "deploy, then trace the slowest requests to isolate the dependency.'"
+            )
+    else:
+        did_well = [
+            f"You covered relevant content for a {context.interview_type.value} interview, "
+            f"with relative strength in {strongest}.",
+        ]
+        should_improve = [
+            f"The answer would land more clearly with stronger {weakest}, particularly in how you order "
+            "context, actions, and results.",
+        ]
+        priority_improvement = (
+            f"Re-order your response so the listener hears the outcome before implementation details. "
+            f"In your current answer, the opening focuses on process before impact, which weakens {weakest}."
+        )
+        example = (
+            "Lead with the result or recommendation first, then explain the 2–3 key steps that produced it."
+        )
+
+    if historical:
+        should_improve.append(
+            f"This repeats a prior pattern ({historical[0]}). Apply the same structural fix in this answer type."
+        )
+
+    return ImprovementCoachOutput(
+        did_well=did_well,
+        should_improve=should_improve,
+        highest_priority=PriorityCoachingFocus(
+            area=weakest,
+            improvement=priority_improvement,
+            why_it_matters=(
+                f"Interviewers weight {weakest} heavily for {context.target_role or 'this role'} at "
+                f"{context.difficulty} level because it signals readiness to communicate impact clearly."
+            ),
+            specific_action=(
+                "Record a 90-second retake: first sentence = outcome, next two sentences = key actions, "
+                "final sentence = measurable result or trade-off."
+            ),
+        ),
+        better_example_answer=example,
+        practice_exercise=PracticeExercise(
+            title=f"{weakest.title()} retake drill",
+            instructions=(
+                "Pick the same question, write a bullet outline with Outcome → Actions → Result, "
+                "then record a 90-second spoken answer without reading verbatim."
+            ),
+            success_criteria=(
+                "The first sentence states the outcome; the answer includes at least one concrete metric "
+                "or decision; no vague openers such as 'I guess' or 'I would try to.'"
+            ),
+        ),
+        evidence_citations=[excerpt or context.answer_text[:120]],
+        prompt_version="1.0",
+        summary=(
+            f"Focus on {weakest} in your next practice pass. Your score was {judge.overall_score}/100; "
+            "the retake drill above targets the highest-impact fix."
+        ),
     )

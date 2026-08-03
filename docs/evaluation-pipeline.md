@@ -1,7 +1,7 @@
 # Evaluation Pipeline
 
-**Status:** MVP (specialist agents + scoring judge)  
-**Scope:** Multi-agent evaluation with judge rollup; improvement coach and persistence not yet implemented
+**Status:** MVP (specialist agents + scoring judge + improvement coach)  
+**Scope:** Multi-agent evaluation with judge rollup and actionable coaching; REST persistence not yet implemented
 
 This document describes the evaluation framework for the Voice-to-Voice Interview Negotiator backend.
 
@@ -19,9 +19,9 @@ Each agent:
 - Does **not** write to the database directly
 - Reports **execution metadata** (model, latency, success/failure)
 
-A central **`EvaluationService`** orchestrates specialist agents in **parallel**, then runs the **Scoring Judge** sequentially. Individual agent failures are isolated and do not fail the entire run.
+A central **`EvaluationService`** orchestrates specialist agents in **parallel**, then runs the **Scoring Judge** and **Improvement Coach** sequentially. Individual agent failures are isolated and do not fail the entire run.
 
-**Not implemented yet:** Improvement Coach, REST persistence layer, background job queue.
+**Not implemented yet:** REST persistence layer, background job queue.
 
 ---
 
@@ -43,7 +43,10 @@ EvaluationService (orchestrator)
         Scoring Judge (sequential)
                 │
                 ▼
-        JudgeEvaluationOutput
+        Improvement Coach (sequential)
+                │
+                ▼
+        JudgeEvaluationOutput + ImprovementCoachOutput
                 │
                 ▼
    (future) repository persists evaluation_runs + agent_evaluations
@@ -60,6 +63,7 @@ EvaluationService (orchestrator)
 | Orchestrator | `app/modules/evaluation/service.py` | Parallel specialists + sequential judge |
 | Scoring model | `app/modules/evaluation/judge/scoring_model.py` | Transparent 0–100 rollup |
 | Judge agent | `app/modules/evaluation/agents/judge.py` | Final structured evaluation |
+| Improvement coach | `app/modules/evaluation/agents/coach.py` | Actionable coaching feedback |
 | Factory | `app/modules/evaluation/factory.py` | Wire mock or OpenAI structured provider |
 
 ---
@@ -263,6 +267,18 @@ After specialists complete, the **Scoring Judge** (`scoring_judge`):
 3. Calculates weighted overall score by interview type
 4. Synthesizes strengths, weaknesses, evidence, and priority improvements (LLM or mock)
 5. Returns `JudgeEvaluationOutput` without writing to the database
+
+---
+
+## Improvement Coach
+
+After the judge completes, the **Improvement Coach** (`improvement_coach`):
+
+1. Receives the candidate answer, question, specialist outputs, judge scores, profile, and historical weaknesses
+2. Produces **specific, evidence-based** coaching (schema rejects generic phrases)
+3. Returns `ImprovementCoachOutput` with did-well, should-improve, highest priority, example answer, and practice exercise
+
+See output fields in `app/ai/schemas/evaluation/coach.py`.
 
 ---
 

@@ -1,0 +1,20 @@
+Candidate answer to evaluate:
+{answer_text}
+
+Question:
+{question_text}
+
+Specialist agent outputs (JSON):
+{specialist_outputs}
+
+Scoring model baseline (authoritative numeric scores, 0–100):
+{baseline_scores}
+
+Conflict resolutions already applied:
+{conflict_resolutions}
+
+Strongest dimensions: {strongest_dimensions}
+Weakest dimensions: {weakest_dimensions}
+
+Produce strengths, weaknesses, evidence (with quotes from the answer), priority improvements, and a summary.
+Do not restate numeric scores — they are fixed by the scoring model.

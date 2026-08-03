@@ -1,7 +1,7 @@
 # Evaluation Pipeline
 
-**Status:** MVP (specialist agents only)  
-**Scope:** Multi-agent answer/session evaluation without judge or coach agents yet
+**Status:** MVP (specialist agents + scoring judge)  
+**Scope:** Multi-agent evaluation with judge rollup; improvement coach and persistence not yet implemented
 
 This document describes the evaluation framework for the Voice-to-Voice Interview Negotiator backend.
 
@@ -19,9 +19,9 @@ Each agent:
 - Does **not** write to the database directly
 - Reports **execution metadata** (model, latency, success/failure)
 
-A central **`EvaluationService`** orchestrates agents in **parallel** and isolates failures so one agent error does not fail the entire run.
+A central **`EvaluationService`** orchestrates specialist agents in **parallel**, then runs the **Scoring Judge** sequentially. Individual agent failures are isolated and do not fail the entire run.
 
-**Not implemented yet:** Scoring/Judge agent, Improvement Coach, REST persistence layer, background job queue.
+**Not implemented yet:** Improvement Coach, REST persistence layer, background job queue.
 
 ---
 
@@ -40,7 +40,10 @@ EvaluationService (orchestrator)
         └── HiringManagerEvaluator ┘
                 │
                 ▼
-        list[AgentExecutionResult]
+        Scoring Judge (sequential)
+                │
+                ▼
+        JudgeEvaluationOutput
                 │
                 ▼
    (future) repository persists evaluation_runs + agent_evaluations
@@ -54,7 +57,9 @@ EvaluationService (orchestrator)
 | Prompts | `app/ai/prompts/evaluation/*/v1/` | Versioned rubrics and message builders |
 | Evaluators | `app/modules/evaluation/agents/` | Agent logic via `BaseEvaluator` |
 | Gating | `app/modules/evaluation/gating.py` | Interview-type skip rules |
-| Orchestrator | `app/modules/evaluation/service.py` | Parallel execution, failure isolation |
+| Orchestrator | `app/modules/evaluation/service.py` | Parallel specialists + sequential judge |
+| Scoring model | `app/modules/evaluation/judge/scoring_model.py` | Transparent 0–100 rollup |
+| Judge agent | `app/modules/evaluation/agents/judge.py` | Final structured evaluation |
 | Factory | `app/modules/evaluation/factory.py` | Wire mock or OpenAI structured provider |
 
 ---
@@ -245,11 +250,26 @@ Tests use `MockEvaluationLLMProvider` and cover:
 - Single-agent failure tolerance
 - Prompt context assembly
 
+See [scoring-methodology.md](./scoring-methodology.md) for the full 0–100 scoring model.
+
+---
+
+## Scoring Judge
+
+After specialists complete, the **Scoring Judge** (`scoring_judge`):
+
+1. Computes normalized 0–100 dimension scores via `ScoringModel` (deterministic, transparent)
+2. Resolves conflicts between specialists (e.g., high clarity but low responsiveness)
+3. Calculates weighted overall score by interview type
+4. Synthesizes strengths, weaknesses, evidence, and priority improvements (LLM or mock)
+5. Returns `JudgeEvaluationOutput` without writing to the database
+
 ---
 
 ## Related docs
 
 - [architecture.md](./architecture.md) — §12–14 multi-agent evaluation design
+- [scoring-methodology.md](./scoring-methodology.md) — 0–100 scoring model
 - [ai-integration.md](./ai-integration.md) — provider layer
 - [interview-domain.md](./interview-domain.md) — interview lifecycle
 - [database.md](./database.md) — evaluation tables

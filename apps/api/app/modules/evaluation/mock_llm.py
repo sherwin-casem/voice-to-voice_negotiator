@@ -5,10 +5,12 @@ from pydantic import BaseModel
 from app.ai.schemas.evaluation.behavioral import BehavioralDimensions, BehavioralEvaluationOutput
 from app.ai.schemas.evaluation.communication import CommunicationDimensions, CommunicationEvaluationOutput
 from app.ai.schemas.evaluation.hiring_manager import HiringManagerDimensions, HiringManagerEvaluationOutput
+from app.ai.schemas.evaluation.judge import EvidenceItem, JudgeSynthesisOutput, PriorityImprovement
 from app.ai.schemas.evaluation.relevance import RelevanceDimensions, RelevanceEvaluationOutput
 from app.ai.schemas.evaluation.technical import TechnicalDimensions, TechnicalEvaluationOutput
 from app.db.enums import HireRecommendation
 from app.modules.evaluation.agents.base import BaseEvaluator, _dimension
+from app.modules.evaluation.judge.scoring_model import ScoringBaseline
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -111,3 +113,56 @@ def _build_mock_output(response_model: type[T]) -> T:
         )
 
     raise TypeError(f"No mock output configured for {response_model.__name__}")
+
+
+def build_mock_judge_synthesis(context, baseline: ScoringBaseline) -> JudgeSynthesisOutput:
+    excerpt = context.answer_text[:100].strip()
+    if len(context.answer_text) > 100:
+        excerpt += "..."
+
+    if baseline.overall_score >= 75:
+        strengths = [
+            "Clear and structured response",
+            f"Strong performance in {', '.join(baseline.strongest_dimensions)}",
+        ]
+        weaknesses = [f"Room to improve {baseline.weakest_dimensions[0]}"]
+        supports: str = "strength"
+    elif baseline.overall_score <= 45:
+        strengths = ["Provides a response to the question"]
+        weaknesses = [
+            "Limited depth and specificity",
+            f"Weak {', '.join(baseline.weakest_dimensions)}",
+        ]
+        supports = "weakness"
+    else:
+        strengths = [f"Adequate {baseline.strongest_dimensions[0]}"]
+        weaknesses = [f"Needs improvement in {baseline.weakest_dimensions[0]}"]
+        supports = "strength" if baseline.overall_score >= 60 else "weakness"
+
+    weakest = baseline.weakest_dimensions[0] if baseline.weakest_dimensions else "communication"
+
+    return JudgeSynthesisOutput(
+        strengths=strengths,
+        weaknesses=weaknesses,
+        evidence=[
+            EvidenceItem(
+                quote=excerpt or context.answer_text,
+                dimension=weakest,
+                supports=supports,  # type: ignore[arg-type]
+            )
+        ],
+        priority_improvements=[
+            PriorityImprovement(
+                area=weakest,
+                priority=1,
+                recommendation=f"Practice improving {weakest} with targeted mock answers.",
+                rationale=f"Scoring model identified {weakest} as a priority gap.",
+            )
+        ],
+        summary=(
+            f"Overall score {baseline.overall_score}/100. "
+            f"Strongest dimensions: {', '.join(baseline.strongest_dimensions) or 'n/a'}. "
+            f"Weakest dimensions: {', '.join(baseline.weakest_dimensions) or 'n/a'}."
+        ),
+        prompt_version="1.0",
+    )

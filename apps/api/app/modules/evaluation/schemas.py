@@ -77,9 +77,13 @@ class EvaluationRunResult:
     agent_results: list[AgentExecutionResult]
     started_at: datetime
     completed_at: datetime
+    judge_result: AgentExecutionResult | None = None
 
     @property
     def status(self) -> EvaluationRunStatus:
+        if self.judge_result and self.judge_result.status == EvaluationRunStatus.COMPLETED:
+            if any(result.succeeded for result in self.agent_results):
+                return EvaluationRunStatus.COMPLETED
         if all(result.skipped for result in self.agent_results):
             return EvaluationRunStatus.SKIPPED
         if any(result.succeeded for result in self.agent_results):

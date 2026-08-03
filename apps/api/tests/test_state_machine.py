@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.feature
-
 from app.db.enums import InterviewSessionStatus, InterviewType
 from app.modules.interview.state_machine import (
     assert_transition,

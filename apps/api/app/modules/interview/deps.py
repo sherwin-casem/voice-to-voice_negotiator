@@ -3,7 +3,10 @@ from uuid import UUID
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.providers.base import StructuredOutputProvider
+from app.ai.providers.factory import get_ai_providers
 from app.api.deps import get_async_session
+from app.config import settings
 from app.modules.interview.interviewer_agent import InterviewerAgent, MockInterviewerLLMProvider
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.interview.repository import InterviewRepository
@@ -12,6 +15,7 @@ __all__ = [
     "get_user_id",
     "get_interview_orchestrator",
     "get_interview_repository",
+    "get_interviewer_agent",
 ]
 
 
@@ -25,11 +29,23 @@ def get_user_id(x_user_id: str | None = Header(default=None, alias="X-User-Id"))
         raise HTTPException(status_code=400, detail="X-User-Id must be a valid UUID") from exc
 
 
+def get_interviewer_agent(
+    structured_provider: StructuredOutputProvider | None = None,
+) -> InterviewerAgent:
+    if structured_provider is not None:
+        return InterviewerAgent(structured_provider)
+
+    if settings.ai_provider == "mock":
+        return InterviewerAgent(MockInterviewerLLMProvider())
+
+    return InterviewerAgent(get_ai_providers().structured)
+
+
 async def get_interview_orchestrator(
     session: AsyncSession = Depends(get_async_session),
 ) -> InterviewOrchestrator:
     repository = InterviewRepository(session)
-    interviewer = InterviewerAgent(MockInterviewerLLMProvider())
+    interviewer = get_interviewer_agent()
     return InterviewOrchestrator(repository, interviewer)
 
 

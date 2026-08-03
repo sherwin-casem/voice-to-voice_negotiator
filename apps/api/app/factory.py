@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.rest.router import api_v1_router
+from app.api.ws.interview import router as interview_ws_router
 from app.config import settings
 from app.core.error_handlers import register_error_handlers
 from app.core.logging import setup_logging
@@ -49,5 +50,6 @@ def create_app() -> FastAPI:
 
     register_error_handlers(app)
     app.include_router(api_v1_router)
+    app.include_router(interview_ws_router, prefix="/api/v1")
 
     return app

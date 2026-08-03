@@ -1,10 +1,8 @@
-import pytest
-
-pytestmark = pytest.mark.feature
-
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from app.core.exceptions import ConflictError, InvalidStateError
 from app.db.enums import InterviewSessionStatus, InterviewType
@@ -216,3 +214,161 @@ async def test_end_session_from_active_sets_completed(
 
     repository.update_session_status.assert_awaited_once()
     assert result.status == InterviewSessionStatus.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_submit_answer_persists_answer(
+    orchestrator: InterviewOrchestrator,
+    repository: AsyncMock,
+) -> None:
+    interview_session = _make_interview_session(status=InterviewSessionStatus.ACTIVE, question_count=1)
+    question = InterviewQuestion(
+        id=uuid.uuid4(),
+        session_id=interview_session.id,
+        sequence_num=1,
+        question_text="Question?",
+        asked_at=datetime.now(UTC),
+        is_follow_up=False,
+        agent_metadata={},
+    )
+    question.answer = None
+    interview_session.questions = [question]
+    repository.get_session_for_user.return_value = interview_session
+    repository.get_latest_question.return_value = question
+    answer_record = AnswerRecord(
+        id=uuid.uuid4(),
+        session_id=interview_session.id,
+        question_id=question.id,
+        answer_text="My answer",
+        answered_at=datetime.now(UTC),
+        duration_ms=12000,
+        word_count=2,
+    )
+    repository.add_answer.return_value = answer_record
+
+    result = await orchestrator.submit_answer(
+        interview_session.id,
+        interview_session.user_id,
+        question.id,
+        answer_text="My answer",
+        duration_ms=12000,
+    )
+
+    repository.add_answer.assert_awaited_once()
+    assert result.answer.answer_text == "My answer"
+
+
+@pytest.mark.asyncio
+async def test_full_interview_lifecycle(
+    orchestrator: InterviewOrchestrator,
+    repository: AsyncMock,
+) -> None:
+    user_id = uuid.uuid4()
+    created = _session_record(status=InterviewSessionStatus.CREATED)
+    configured = _session_record(status=InterviewSessionStatus.CONFIGURED)
+    configured = SessionRecord(
+        **{**configured.__dict__, "config_snapshot": {"interview_type": "behavioral", "difficulty": "mid", "max_questions": 2}},
+    )
+
+    interview_session = _make_interview_session(
+        status=InterviewSessionStatus.CREATED,
+        config_snapshot={"interview_type": "behavioral", "difficulty": "mid", "max_questions": 2},
+    )
+    interview_session.user_id = user_id
+
+    repository.create_session.return_value = created
+    repository.get_session_for_user.side_effect = [
+        interview_session,
+        _make_interview_session(
+            status=InterviewSessionStatus.CONFIGURED,
+            config_snapshot=interview_session.config_snapshot,
+        ),
+        _make_interview_session(
+            status=InterviewSessionStatus.CONFIGURED,
+            config_snapshot=interview_session.config_snapshot,
+        ),
+    ]
+    repository.configure_session.return_value = configured
+    repository.get_context_summaries.return_value = MagicMock(
+        resume_summary="Built APIs at scale",
+        job_description_summary="Senior backend role",
+        company_name="Acme",
+    )
+    repository.add_question.side_effect = [
+        _question_record(interview_session.id, sequence_num=1),
+        _question_record(interview_session.id, sequence_num=2),
+    ]
+    repository.update_session_status.return_value = _session_record(status=InterviewSessionStatus.COMPLETED)
+
+    session = await orchestrator.create_session(user_id, title="Practice")
+    assert session.status == InterviewSessionStatus.CREATED
+
+    configured_session = await orchestrator.configure_session(
+        interview_session.id,
+        user_id,
+        SessionConfigInput(
+            interview_type=InterviewType.BEHAVIORAL,
+            difficulty="mid",
+            target_role="Backend Engineer",
+            company_context="High-growth startup",
+            max_questions=2,
+        ),
+    )
+    assert configured_session.status == InterviewSessionStatus.CONFIGURED
+
+    active_session = _make_interview_session(
+        status=InterviewSessionStatus.CONFIGURED,
+        config_snapshot=interview_session.config_snapshot,
+    )
+    active_session.user_id = user_id
+    active_session.questions = []
+    repository.get_session_for_user.side_effect = None
+    repository.get_session_for_user.return_value = active_session
+
+    first_question = await orchestrator.start(interview_session.id, user_id)
+    assert first_question.question.sequence_num == 1
+
+    q1 = InterviewQuestion(
+        id=first_question.question.id,
+        session_id=interview_session.id,
+        sequence_num=1,
+        question_text=first_question.question.question_text,
+        asked_at=datetime.now(UTC),
+        is_follow_up=False,
+        agent_metadata={},
+    )
+    q1.answer = None
+    active_after_q1 = _make_interview_session(
+        status=InterviewSessionStatus.ACTIVE,
+        question_count=1,
+        config_snapshot=interview_session.config_snapshot,
+    )
+    active_after_q1.user_id = user_id
+    active_after_q1.questions = [q1]
+    repository.get_session_for_user.return_value = active_after_q1
+    repository.get_latest_question.return_value = q1
+    repository.add_answer.return_value = AnswerRecord(
+        id=uuid.uuid4(),
+        session_id=interview_session.id,
+        question_id=q1.id,
+        answer_text="STAR answer",
+        answered_at=datetime.now(UTC),
+        duration_ms=30000,
+        word_count=50,
+    )
+
+    answer_result = await orchestrator.submit_answer(
+        interview_session.id,
+        user_id,
+        q1.id,
+        answer_text="STAR answer",
+    )
+    assert answer_result.answer.answer_text == "STAR answer"
+
+    q1.answer = MagicMock(answer_text="STAR answer")
+    repository.add_question.return_value = _question_record(interview_session.id, sequence_num=2)
+    second_question = await orchestrator.ask_next_question(interview_session.id, user_id)
+    assert second_question.question.sequence_num == 2
+
+    ended = await orchestrator.end_session(interview_session.id, user_id, reason="user_ended")
+    assert ended.status == InterviewSessionStatus.COMPLETED

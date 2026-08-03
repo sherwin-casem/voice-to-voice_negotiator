@@ -14,6 +14,7 @@ from app.modules.interview.schemas import (
     SessionRecord,
 )
 from app.modules.interview.state_machine import assert_transition, is_terminal
+from app.modules.interview.validators import normalize_question_output
 
 
 @dataclass(frozen=True)
@@ -163,6 +164,7 @@ class InterviewOrchestrator:
 
         context = await self._build_interviewer_context(interview_session)
         output = await self._interviewer.generate_question(context)
+        output = normalize_question_output(output, context.asked_topics)
 
         parent_question_id = None
         if output.is_follow_up and interview_session.questions:

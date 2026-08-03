@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 
+import { env } from "@/lib/env";
 import { getDevUserId, setDevUserId } from "@/lib/user-id";
 
 interface AppContextValue {
@@ -11,12 +12,15 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserIdState] = useState("");
+function readInitialUserId(): string {
+  if (typeof window === "undefined") {
+    return env.devUserId ?? "";
+  }
+  return getDevUserId();
+}
 
-  useEffect(() => {
-    setUserIdState(getDevUserId());
-  }, []);
+export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [userId, setUserIdState] = useState(readInitialUserId);
 
   const value = useMemo(
     () => ({

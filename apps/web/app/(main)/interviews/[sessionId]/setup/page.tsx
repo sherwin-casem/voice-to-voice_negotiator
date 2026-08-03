@@ -3,7 +3,7 @@
 import type { ConfigureSessionRequest, DifficultyLevel, InterviewType } from "@voice/shared";
 import { INTERVIEW_TYPE_LABELS } from "@voice/shared";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, Spinner } from "@/components/ui/Alert";
@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/FormControls";
 import { useAppContext } from "@/context/AppProvider";
+import { useSession } from "@/hooks/useSession";
 import { ApiClientError } from "@/lib/api-client";
 import {
   configureSession,
   createJobDescription,
   createResume,
-  getSession,
 } from "@/lib/interview-api";
 
 const INTERVIEW_TYPES = Object.keys(INTERVIEW_TYPE_LABELS) as InterviewType[];
@@ -26,54 +26,18 @@ export default function InterviewSetupPage() {
   const sessionId = params.sessionId;
   const router = useRouter();
   const { userId } = useAppContext();
-
-  const [loadingSession, setLoadingSession] = useState(true);
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  const { session, error: sessionError, isLoading: loadingSession } = useSession(userId, sessionId);
 
   const [interviewType, setInterviewType] = useState<InterviewType>("behavioral");
   const [difficulty, setDifficulty] = useState<DifficultyLevel>("mid");
   const [targetRole, setTargetRole] = useState("");
+  const effectiveTargetRole = targetRole || session?.title || "";
   const [companyContext, setCompanyContext] = useState("");
   const [maxQuestions, setMaxQuestions] = useState("5");
   const [resumeText, setResumeText] = useState("");
   const [jobDescriptionText, setJobDescriptionText] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!userId || !sessionId) {
-      return;
-    }
-
-    let cancelled = false;
-    setLoadingSession(true);
-    getSession(userId, sessionId)
-      .then((session) => {
-        if (cancelled) {
-          return;
-        }
-        if (session.title) {
-          setTargetRole((current) => current || session.title || "");
-        }
-      })
-      .catch((caught) => {
-        if (cancelled) {
-          return;
-        }
-        setSessionError(
-          caught instanceof ApiClientError ? caught.message : "Unable to load session.",
-        );
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingSession(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId, userId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,7 +71,7 @@ export default function InterviewSetupPage() {
       const body: ConfigureSessionRequest = {
         interview_type: interviewType,
         difficulty,
-        target_role: targetRole.trim() || null,
+        target_role: effectiveTargetRole.trim() || null,
         company_context: companyContext.trim() || null,
         max_questions: Number(maxQuestions) || null,
         resume_id: resumeId,
@@ -175,7 +139,7 @@ export default function InterviewSetupPage() {
               <Label htmlFor="target-role">Target role</Label>
               <Input
                 id="target-role"
-                value={targetRole}
+                value={effectiveTargetRole}
                 onChange={(event) => setTargetRole(event.target.value)}
                 placeholder="Senior Backend Engineer"
               />

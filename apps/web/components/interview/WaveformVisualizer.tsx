@@ -15,16 +15,22 @@ export function WaveformVisualizer({
   isActive: boolean;
   className?: string;
 }) {
-  const [bars, setBars] = useState<number[]>(() => Array.from({ length: BAR_COUNT }, () => 0.15));
+  const [activeBars, setActiveBars] = useState<number[]>(() =>
+    Array.from({ length: BAR_COUNT }, () => 0.15),
+  );
+
+  const inactiveBars = useMemo(
+    () => Array.from({ length: BAR_COUNT }, () => 0.12),
+    [],
+  );
 
   useEffect(() => {
     if (!isActive) {
-      setBars(Array.from({ length: BAR_COUNT }, () => 0.12));
       return;
     }
 
     const interval = window.setInterval(() => {
-      setBars(
+      setActiveBars(
         Array.from({ length: BAR_COUNT }, (_, index) => {
           const wave = Math.sin(Date.now() / 120 + index * 0.5) * 0.25;
           const base = level * 0.7 + 0.15;
@@ -36,7 +42,7 @@ export function WaveformVisualizer({
     return () => window.clearInterval(interval);
   }, [isActive, level]);
 
-  const heights = useMemo(() => bars, [bars]);
+  const heights = isActive ? activeBars : inactiveBars;
 
   return (
     <div

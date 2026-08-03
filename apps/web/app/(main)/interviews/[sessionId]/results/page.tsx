@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import {
   AnswerEvaluationList,
@@ -17,11 +17,9 @@ import { SessionStatusBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { useAppContext } from "@/context/AppProvider";
-import { ApiClientError } from "@/lib/api-client";
+import { useSession } from "@/hooks/useSession";
 import { formatDate } from "@/lib/format";
 import { buildPreviewEvaluation } from "@/lib/mocks/evaluation";
-import { getSession } from "@/lib/interview-api";
-import type { SessionResponse } from "@voice/shared";
 
 export default function InterviewResultsPage() {
   const params = useParams<{ sessionId: string }>();
@@ -29,42 +27,11 @@ export default function InterviewResultsPage() {
   const sessionId = params.sessionId;
   const isPreviewMode = searchParams.get("preview") === "1";
   const { userId } = useAppContext();
-
-  const [session, setSession] = useState<SessionResponse | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(!isPreviewMode);
-
-  useEffect(() => {
-    if (isPreviewMode || !userId || !sessionId) {
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoading(true);
-
-    getSession(userId, sessionId)
-      .then((loaded) => {
-        if (!cancelled) {
-          setSession(loaded);
-        }
-      })
-      .catch((caught) => {
-        if (!cancelled) {
-          setLoadError(
-            caught instanceof ApiClientError ? caught.message : "Unable to load session.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isPreviewMode, sessionId, userId]);
+  const { session, error: loadError, isLoading: sessionLoading } = useSession(
+    isPreviewMode ? "" : userId,
+    isPreviewMode ? "" : sessionId,
+  );
+  const isLoading = isPreviewMode ? false : sessionLoading;
 
   const evaluation = useMemo(
     () => buildPreviewEvaluation(session?.title ?? "Interview session"),

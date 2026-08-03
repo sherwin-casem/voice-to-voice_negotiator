@@ -3,6 +3,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from app.config import settings
+from app.core.uploads import read_text_upload
+
 from app.modules.context.deps import get_context_preparation_service, get_context_repository
 from app.modules.context.repository import ContextRepository
 from app.modules.context.service import ContextPreparationService
@@ -101,7 +104,7 @@ async def upload_resume(
     if file.content_type not in _TEXT_UPLOAD_MIME_TYPES:
         raise HTTPException(status_code=400, detail="Only plain-text resume uploads are supported in MVP")
 
-    raw_text = (await file.read()).decode("utf-8")
+    raw_text = await read_text_upload(file, max_bytes=settings.max_upload_bytes)
     resume = await repository.create_resume(user_id, title=title, raw_text=raw_text)
     profile = await context_service.prepare_resume(
         resume.id,
@@ -176,7 +179,7 @@ async def upload_job_description(
             detail="Only plain-text job description uploads are supported in MVP",
         )
 
-    raw_text = (await file.read()).decode("utf-8")
+    raw_text = await read_text_upload(file, max_bytes=settings.max_upload_bytes)
     job_description = await repository.create_job_description(
         user_id,
         title=title,

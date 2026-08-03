@@ -1,6 +1,24 @@
+import base64
+
 import pytest
 
 from app.modules.voice.pipeline.turn_buffer import TurnAudioBuffer
+
+
+def test_turn_buffer_rejects_oversized_chunk() -> None:
+    buffer = TurnAudioBuffer(max_chunk_bytes=4)
+    oversized = base64.b64encode(b"hello").decode()
+
+    with pytest.raises(ValueError, match="chunk exceeds maximum"):
+        buffer.append(0, oversized)
+
+
+def test_turn_buffer_rejects_oversized_turn() -> None:
+    buffer = TurnAudioBuffer(max_chunk_bytes=10, max_turn_bytes=3)
+    buffer.append(0, "YWFh")  # "aaa" = 3 bytes at limit
+
+    with pytest.raises(ValueError, match="Turn audio exceeds"):
+        buffer.append(1, "YQ==")
 
 
 def test_turn_buffer_requires_monotonic_sequence() -> None:

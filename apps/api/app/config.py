@@ -29,6 +29,8 @@ class Settings(BaseSettings):
 
     voice_provider: Literal["mock"] = "mock"
     ws_max_audio_chunk_bytes: int = 256_000
+    ws_max_turn_audio_bytes: int = 5_242_880
+    max_upload_bytes: int = 512_000
 
     ai_provider: Literal["mock", "openai"] = "mock"
     openai_api_key: str | None = None
@@ -58,6 +60,10 @@ class Settings(BaseSettings):
     @property
     def is_test(self) -> bool:
         return self.app_env == "test"
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
 
 
 settings = Settings()

@@ -19,6 +19,7 @@ import { MetricBar } from "@/components/ui/MetricBar";
 import { useAppContext } from "@/context/AppProvider";
 import { useInterviewTimer } from "@/hooks/useInterviewTimer";
 import { useLiveMetricsPreview } from "@/hooks/useLiveMetricsPreview";
+import { useSession } from "@/hooks/useSession";
 import { useVoiceInterview } from "@/hooks/useVoiceInterview";
 import { ApiClientError } from "@/lib/api-client";
 import { getSession } from "@/lib/interview-api";
@@ -28,12 +29,41 @@ export default function LiveInterviewPage() {
   const sessionId = params.sessionId;
   const router = useRouter();
   const { userId } = useAppContext();
+  const {
+    session: loadedSession,
+    error: sessionLoadError,
+    isLoading,
+  } = useSession(userId, sessionId);
 
-  const [session, setSession] = useState<SessionResponse | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [sessionPatch, setSessionPatch] = useState<{
+    sessionId: string;
+    patch: Partial<SessionResponse>;
+  } | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+
+  const session = useMemo(() => {
+    if (!loadedSession) {
+      return null;
+    }
+    if (sessionPatch?.sessionId === loadedSession.id) {
+      return { ...loadedSession, ...sessionPatch.patch };
+    }
+    return loadedSession;
+  }, [loadedSession, sessionPatch]);
+
+  const loadError = refreshError ?? sessionLoadError;
+
+  const applySessionPatch = useCallback(
+    (patch: Partial<SessionResponse>) => {
+      if (!loadedSession) {
+        return;
+      }
+      setSessionPatch({ sessionId: loadedSession.id, patch });
+    },
+    [loadedSession],
+  );
 
   const { metrics } = useLiveMetricsPreview();
 
@@ -43,25 +73,23 @@ export default function LiveInterviewPage() {
     }
     try {
       const loaded = await getSession(userId, sessionId);
-      setSession(loaded);
+      applySessionPatch({
+        status: loaded.status,
+        question_count: loaded.question_count,
+      });
     } catch (caught) {
-      setLoadError(
+      setRefreshError(
         caught instanceof ApiClientError ? caught.message : "Unable to refresh session.",
       );
     }
-  }, [sessionId, userId]);
+  }, [applySessionPatch, sessionId, userId]);
 
   const voice = useVoiceInterview(sessionId, userId, {
     onSessionStatusChange: (status, questionCount) => {
-      setSession((previous) =>
-        previous
-          ? {
-              ...previous,
-              status: status as InterviewSessionStatus,
-              question_count: questionCount,
-            }
-          : previous,
-      );
+      applySessionPatch({
+        status: status as InterviewSessionStatus,
+        question_count: questionCount,
+      });
     },
     onSessionEnded: () => {
       void refreshSession();
@@ -98,38 +126,6 @@ export default function LiveInterviewPage() {
   }, [session?.config]);
 
   useEffect(() => {
-    if (!userId || !sessionId) {
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoading(true);
-
-    getSession(userId, sessionId)
-      .then((loaded) => {
-        if (!cancelled) {
-          setSession(loaded);
-        }
-      })
-      .catch((caught) => {
-        if (!cancelled) {
-          setLoadError(
-            caught instanceof ApiClientError ? caught.message : "Unable to load session.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId, userId]);
-
-  useEffect(() => {
     if (userId && sessionId) {
       voice.connect();
     }
@@ -137,12 +133,12 @@ export default function LiveInterviewPage() {
 
   async function handleStartInterview() {
     setIsStarting(true);
-    setLoadError(null);
+    setRefreshError(null);
     try {
       await voice.startInterview();
       await refreshSession();
     } catch (caught) {
-      setLoadError(
+      setRefreshError(
         caught instanceof Error ? caught.message : "Unable to start voice interview.",
       );
     } finally {
@@ -152,14 +148,14 @@ export default function LiveInterviewPage() {
 
   async function handleEndInterview() {
     setIsEnding(true);
-    setLoadError(null);
+    setRefreshError(null);
     try {
       await voice.endInterview();
       voice.disconnect();
       await refreshSession();
       router.push(`/interviews/${sessionId}/results`);
     } catch (caught) {
-      setLoadError(
+      setRefreshError(
         caught instanceof Error ? caught.message : "Unable to end interview gracefully.",
       );
     } finally {

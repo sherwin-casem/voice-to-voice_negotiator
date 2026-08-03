@@ -130,6 +130,7 @@ export const API_ROUTES = {
   jobDescriptions: "/api/v1/context/job-descriptions",
   jobDescription: (id: string) => `/api/v1/context/job-descriptions/${id}`,
   jobDescriptionUpload: "/api/v1/context/job-descriptions/upload",
+  progress: "/api/v1/progress",
   voiceWebSocket: (sessionId: string, userId: string) =>
     `/api/v1/ws/interview/${sessionId}?user_id=${userId}`,
 } as const;

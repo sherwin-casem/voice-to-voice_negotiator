@@ -1,4 +1,9 @@
 from app.ai.schemas.evaluation.behavioral import BehavioralEvaluationOutput
+from app.ai.schemas.evaluation.coach import (
+    ImprovementCoachOutput,
+    PracticeExercise,
+    PriorityCoachingFocus,
+)
 from app.ai.schemas.evaluation.communication import CommunicationEvaluationOutput
 from app.ai.schemas.evaluation.common import DimensionScore, SpecialistEvaluationOutput
 from app.ai.schemas.evaluation.hiring_manager import HiringManagerEvaluationOutput
@@ -17,11 +22,14 @@ __all__ = [
     "CommunicationEvaluationOutput",
     "DimensionScore",
     "HiringManagerEvaluationOutput",
+    "ImprovementCoachOutput",
     "EvidenceItem",
     "JudgeDimensionScores",
     "JudgeEvaluationOutput",
     "JudgeSynthesisOutput",
     "PriorityImprovement",
+    "PracticeExercise",
+    "PriorityCoachingFocus",
     "RelevanceEvaluationOutput",
     "SpecialistEvaluationOutput",
     "TechnicalEvaluationOutput",

@@ -24,23 +24,6 @@ export function Alert({
   );
 }
 
-export function PreviewDataBanner({ endpoint }: { endpoint: string }) {
-  return (
-    <Alert variant="warning" title="Preview data">
-      Showing sample data because <code className="font-mono text-xs opacity-80">{endpoint}</code>{" "}
-      is not available yet. Live session actions still use the real API where implemented.
-    </Alert>
-  );
-}
-
-export function PreviewMetricsBanner() {
-  return (
-    <p className="text-xs text-[var(--text-dim)]">
-      Preview metrics — live scoring coming soon
-    </p>
-  );
-}
-
 export function Spinner({ label = "Loading" }: { label?: string }) {
   return (
     <div
@@ -56,3 +39,5 @@ export function Spinner({ label = "Loading" }: { label?: string }) {
     </div>
   );
 }
+
+export { PreviewDataBanner, PreviewMetricsBanner, PreviewNoticeBanner } from "@/components/ui/PreviewNotice";

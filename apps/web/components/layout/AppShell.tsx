@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { PreviewNoticeBanner } from "@/components/ui/PreviewNotice";
 import { cn } from "@/lib/format";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
   { href: "/interviews/new", label: "Create Interview" },
   { href: "/progress", label: "Progress" },
 ];
@@ -33,7 +33,7 @@ export function AppShell({
       {isImmersive ? (
         <header className="border-b border-[var(--border-glass)] bg-black/20 backdrop-blur-md">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-            <Link href="/dashboard" className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] hover:text-teal-300">
+            <Link href="/interviews/new" className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] hover:text-teal-300">
               ← Exit
             </Link>
             {immersiveActions ? (
@@ -49,7 +49,7 @@ export function AppShell({
                 Voice Interview Negotiator
               </p>
               <Link
-                href="/dashboard"
+                href="/interviews/new"
                 className="text-lg font-semibold text-[var(--text-primary)] hover:text-teal-300"
               >
                 Practice Studio
@@ -87,6 +87,7 @@ export function AppShell({
           isImmersive ? "max-w-[1400px] px-4 py-4 sm:px-6 sm:py-6" : "max-w-6xl px-4 py-8 sm:px-6",
         )}
       >
+        {!isImmersive ? <PreviewNoticeBanner /> : null}
         {children}
       </main>
     </div>

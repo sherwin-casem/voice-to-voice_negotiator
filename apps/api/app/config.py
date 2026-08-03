@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Literal
+import json
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
@@ -25,7 +26,10 @@ class Settings(BaseSettings):
 
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins_raw: str = Field(
+        default="http://localhost:3000",
+        validation_alias="CORS_ORIGINS",
+    )
 
     voice_provider: Literal["mock"] = "mock"
     ws_max_audio_chunk_bytes: int = 256_000
@@ -46,12 +50,17 @@ class Settings(BaseSettings):
     ai_max_retries: int = 2
     ai_retry_backoff_seconds: float = 0.5
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value: object) -> list[str]:
-        if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value  # type: ignore[return-value]
+    @property
+    def cors_origins(self) -> list[str]:
+        value = self.cors_origins_raw.strip()
+        if not value:
+            return []
+        if value.startswith("["):
+            parsed = json.loads(value)
+            if isinstance(parsed, list):
+                return [str(origin).strip() for origin in parsed if str(origin).strip()]
+            return [str(parsed)]
+        return [origin.strip() for origin in value.split(",") if origin.strip()]
 
     @property
     def is_development(self) -> bool:

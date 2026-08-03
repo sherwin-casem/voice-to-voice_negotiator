@@ -71,6 +71,21 @@ class MockInterviewerLLMProvider:
         else:
             question_text, topic_tag = self._OPENING_QUESTIONS[context.interview_type]
 
+        if context.likely_interview_topics:
+            for topic in context.likely_interview_topics:
+                slug = topic.lower().replace(" ", "_")[:40]
+                if slug not in asked_topics:
+                    topic_tag = slug
+                    if is_follow_up:
+                        question_text = (
+                            f"Following up on {topic.lower()}, what was your specific contribution and outcome?"
+                        )
+                    else:
+                        question_text = (
+                            f"Tell me about your experience with {topic.lower()} and a concrete example."
+                        )
+                    break
+
         if topic_tag in asked_topics:
             question_text = (
                 f"Building on a new area we have not covered yet, {question_text.lower()}"

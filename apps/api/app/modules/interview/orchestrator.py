@@ -15,6 +15,7 @@ from app.modules.interview.schemas import (
 )
 from app.modules.interview.state_machine import assert_transition, is_terminal
 from app.modules.interview.validators import normalize_question_output
+from app.modules.context.service import ContextPreparationService
 
 
 @dataclass(frozen=True)
@@ -35,9 +36,11 @@ class InterviewOrchestrator:
         self,
         repository: InterviewRepository,
         interviewer: InterviewerAgent,
+        context_preparation: ContextPreparationService | None = None,
     ) -> None:
         self._repository = repository
         self._interviewer = interviewer
+        self._context_preparation = context_preparation
 
     async def create_session(self, user_id: UUID, title: str | None = None) -> SessionRecord:
         return await self._repository.create_session(user_id, title=title)
@@ -51,7 +54,11 @@ class InterviewOrchestrator:
         interview_session = await self._repository.get_session_for_user(session_id, user_id)
         self._ensure_status(interview_session, {InterviewSessionStatus.CREATED})
         assert_transition(interview_session.status, InterviewSessionStatus.CONFIGURED)
-        return await self._repository.configure_session(session_id, user_id, config)
+        session = await self._repository.configure_session(session_id, user_id, config)
+        if self._context_preparation is not None:
+            loaded = await self._repository.get_session_for_user(session_id, user_id)
+            await self._context_preparation.ensure_session_documents_prepared(loaded, user_id)
+        return session
 
     async def start(self, session_id: UUID, user_id: UUID) -> QuestionResult:
         interview_session = await self._repository.get_session_for_user(session_id, user_id)
@@ -224,6 +231,16 @@ class InterviewOrchestrator:
             company_context = f"{summaries.company_name}: {company_context}"
         elif summaries.company_name:
             company_context = summaries.company_name
+
+        if self._context_preparation is not None:
+            return self._context_preparation.build_interviewer_context(
+                interview_session,
+                prior_turns=prior_turns,
+                asked_topics=asked_topics,
+                question_number=interview_session.question_count + 1,
+                max_questions=config.get("max_questions"),
+                company_context=company_context,
+            )
 
         return InterviewerContext(
             interview_type=interview_session.interview_type,

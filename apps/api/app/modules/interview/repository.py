@@ -185,12 +185,18 @@ class InterviewRepository:
         company_name = None
 
         if interview_session.resume is not None:
-            resume_summary = (
-                interview_session.resume.summary_text or interview_session.resume.raw_text[:500]
-            )
+            resume_summary = interview_session.resume.summary_text
+            if not resume_summary and interview_session.resume.parsed_profile:
+                resume_summary = interview_session.resume.parsed_profile.get("summary_text")
+            if not resume_summary:
+                resume_summary = interview_session.resume.raw_text[:500]
         if interview_session.job_description is not None:
             jd = interview_session.job_description
-            jd_summary = jd.summary_text or jd.raw_text[:500]
+            jd_summary = jd.summary_text
+            if not jd_summary and jd.parsed_requirements:
+                jd_summary = jd.parsed_requirements.get("summary_text")
+            if not jd_summary:
+                jd_summary = jd.raw_text[:500]
             company_name = jd.company_name
 
         return ContextSummaries(

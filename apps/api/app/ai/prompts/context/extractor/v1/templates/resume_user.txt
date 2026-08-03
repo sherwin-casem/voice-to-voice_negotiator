@@ -1,0 +1,6 @@
+Resume title: {title}
+
+Resume text:
+{raw_text}
+
+Extract structured profile fields for interview preparation.

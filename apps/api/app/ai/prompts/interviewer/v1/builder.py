@@ -3,7 +3,7 @@ from pathlib import Path
 from app.ai.schemas.interviewer import InterviewerContext
 from app.db.enums import InterviewType
 
-PROMPT_VERSION = "1.0"
+PROMPT_VERSION = "1.1"
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 _TYPE_GUIDANCE: dict[InterviewType, str] = {
@@ -51,6 +51,12 @@ def _format_prior_turns(context: InterviewerContext) -> str:
     return "\n\n".join(lines)
 
 
+def _format_list(values: list[str], empty_label: str = "None") -> str:
+    if not values:
+        return empty_label
+    return ", ".join(values)
+
+
 def build_interviewer_messages(context: InterviewerContext) -> list[dict[str, str]]:
     system_template = _load_template("system.txt")
     user_template = _load_template("user.txt")
@@ -68,6 +74,14 @@ def build_interviewer_messages(context: InterviewerContext) -> list[dict[str, st
         company_context=context.company_context or "Not specified",
         resume_summary=context.resume_summary or "Not provided",
         job_description_summary=context.job_description_summary or "Not provided",
+        candidate_skills=_format_list(context.candidate_skills),
+        relevant_experience=_format_list(context.relevant_experience),
+        relevant_projects=_format_list(context.relevant_projects),
+        role_responsibilities=_format_list(context.role_responsibilities),
+        technical_focus_areas=_format_list(context.technical_focus_areas),
+        behavioral_focus_areas=_format_list(context.behavioral_focus_areas),
+        likely_interview_topics=_format_list(context.likely_interview_topics),
+        evaluation_rubric_hints=_format_list(context.evaluation_rubric_hints, "Not provided"),
         asked_topics=", ".join(context.asked_topics) if context.asked_topics else "None",
         question_number=context.question_number,
         max_questions_line=max_questions_line,

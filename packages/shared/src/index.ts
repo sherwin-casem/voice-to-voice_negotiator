@@ -81,10 +81,13 @@ export interface SubmitAnswerResponse {
   answer: AnswerResponse;
 }
 
+export type DocumentParseStatus = "pending" | "parsed" | "failed";
+
 export interface ResumeResponse {
   id: string;
   title: string;
   summary_text: string | null;
+  parse_status: DocumentParseStatus;
   created_at: string;
 }
 
@@ -93,6 +96,7 @@ export interface JobDescriptionResponse {
   title: string;
   company_name: string | null;
   summary_text: string | null;
+  parse_status: DocumentParseStatus;
   created_at: string;
 }
 
@@ -121,7 +125,11 @@ export const API_ROUTES = {
   submitAnswer: (id: string) => `/api/v1/sessions/${id}/answers`,
   endSession: (id: string) => `/api/v1/sessions/${id}/end`,
   resumes: "/api/v1/context/resumes",
+  resume: (id: string) => `/api/v1/context/resumes/${id}`,
+  resumeUpload: "/api/v1/context/resumes/upload",
   jobDescriptions: "/api/v1/context/job-descriptions",
+  jobDescription: (id: string) => `/api/v1/context/job-descriptions/${id}`,
+  jobDescriptionUpload: "/api/v1/context/job-descriptions/upload",
   voiceWebSocket: (sessionId: string, userId: string) =>
     `/api/v1/ws/interview/${sessionId}?user_id=${userId}`,
 } as const;

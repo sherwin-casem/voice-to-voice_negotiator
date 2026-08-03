@@ -10,6 +10,8 @@ from app.config import settings
 from app.modules.interview.interviewer_agent import InterviewerAgent, MockInterviewerLLMProvider
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.interview.repository import InterviewRepository
+from app.modules.context.deps import get_context_preparation_service
+from app.modules.context.service import ContextPreparationService
 
 __all__ = [
     "get_user_id",
@@ -43,10 +45,11 @@ def get_interviewer_agent(
 
 async def get_interview_orchestrator(
     session: AsyncSession = Depends(get_async_session),
+    context_preparation: ContextPreparationService = Depends(get_context_preparation_service),
 ) -> InterviewOrchestrator:
     repository = InterviewRepository(session)
     interviewer = get_interviewer_agent()
-    return InterviewOrchestrator(repository, interviewer)
+    return InterviewOrchestrator(repository, interviewer, context_preparation)
 
 
 async def get_interview_repository(

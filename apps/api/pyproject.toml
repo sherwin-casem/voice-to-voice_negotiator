@@ -10,6 +10,7 @@ dependencies = [
     "openai>=1.60.0",
     "psycopg[binary]>=3.2.0",
     "pydantic-settings>=2.6.0",
+    "python-multipart>=0.0.20",
     "sqlalchemy>=2.0.36",
     "uvicorn[standard]>=0.32.0",
 ]
@@ -30,6 +31,7 @@ packages = ["app"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "app/ai/prompts/interviewer/v1/templates" = "app/ai/prompts/interviewer/v1/templates"
+"app/ai/prompts/context/extractor/v1/templates" = "app/ai/prompts/context/extractor/v1/templates"
 
 [dependency-groups]
 dev = [

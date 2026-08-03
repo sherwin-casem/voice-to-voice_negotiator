@@ -1,0 +1,7 @@
+Job title: {title}
+Company: {company_name}
+
+Job description text:
+{raw_text}
+
+Extract structured requirements for interview preparation and evaluation rubrics.

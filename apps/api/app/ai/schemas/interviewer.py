@@ -32,6 +32,14 @@ class InterviewerContext(BaseModel):
     company_context: str | None = None
     resume_summary: str | None = None
     job_description_summary: str | None = None
+    candidate_skills: list[str] = Field(default_factory=list)
+    relevant_experience: list[str] = Field(default_factory=list)
+    relevant_projects: list[str] = Field(default_factory=list)
+    role_responsibilities: list[str] = Field(default_factory=list)
+    technical_focus_areas: list[str] = Field(default_factory=list)
+    behavioral_focus_areas: list[str] = Field(default_factory=list)
+    likely_interview_topics: list[str] = Field(default_factory=list)
+    evaluation_rubric_hints: list[str] = Field(default_factory=list)
     prior_turns: list[PriorTurn] = Field(default_factory=list)
     question_number: int = Field(ge=1)
     max_questions: int | None = None

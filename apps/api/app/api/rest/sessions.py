@@ -12,12 +12,6 @@ from app.modules.interview.schemas import (
     SessionRecord,
 )
 from app.schemas.common import ApiResponse
-from app.schemas.context import (
-    CreateJobDescriptionRequest,
-    CreateResumeRequest,
-    JobDescriptionResponse,
-    ResumeResponse,
-)
 from app.schemas.interview import (
     ConfigureSessionRequest,
     CreateSessionRequest,
@@ -184,52 +178,3 @@ async def end_session(
 ) -> ApiResponse[SessionResponse]:
     session = await orchestrator.end_session(session_id, user_id, reason=body.reason)
     return ApiResponse(data=_session_response(session))
-
-
-context_router = APIRouter(prefix="/context", tags=["context"])
-
-
-@context_router.post("/resumes", response_model=ApiResponse[ResumeResponse])
-async def create_resume(
-    body: CreateResumeRequest,
-    user_id: UUID = Depends(get_user_id),
-    repository: InterviewRepository = Depends(get_interview_repository),
-) -> ApiResponse[ResumeResponse]:
-    resume = await repository.create_resume(
-        user_id,
-        title=body.title,
-        raw_text=body.raw_text,
-        summary_text=body.summary_text,
-    )
-    return ApiResponse(
-        data=ResumeResponse(
-            id=resume.id,
-            title=resume.title,
-            summary_text=resume.summary_text,
-            created_at=resume.created_at,
-        )
-    )
-
-
-@context_router.post("/job-descriptions", response_model=ApiResponse[JobDescriptionResponse])
-async def create_job_description(
-    body: CreateJobDescriptionRequest,
-    user_id: UUID = Depends(get_user_id),
-    repository: InterviewRepository = Depends(get_interview_repository),
-) -> ApiResponse[JobDescriptionResponse]:
-    job_description = await repository.create_job_description(
-        user_id,
-        title=body.title,
-        raw_text=body.raw_text,
-        company_name=body.company_name,
-        summary_text=body.summary_text,
-    )
-    return ApiResponse(
-        data=JobDescriptionResponse(
-            id=job_description.id,
-            title=job_description.title,
-            company_name=job_description.company_name,
-            summary_text=job_description.summary_text,
-            created_at=job_description.created_at,
-        )
-    )

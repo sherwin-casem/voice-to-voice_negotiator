@@ -33,7 +33,7 @@ async def test_mock_interviewer_generates_opening_question(
     assert output.topic_tag
     assert output.is_follow_up is False
     assert output.should_end_session is False
-    assert output.prompt_version == "1.0"
+    assert output.prompt_version == "1.1"
 
 
 @pytest.mark.asyncio
@@ -73,3 +73,19 @@ async def test_mock_interviewer_avoids_duplicate_topic_tags() -> None:
     )
 
     assert output.topic_tag != opening[1] or "new area" in output.question_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_mock_interviewer_uses_likely_interview_topics() -> None:
+    agent = InterviewerAgent(MockInterviewerLLMProvider())
+    output = await agent.generate_question(
+        InterviewerContext(
+            interview_type=InterviewType.TECHNICAL,
+            difficulty="mid",
+            question_number=1,
+            likely_interview_topics=["Distributed systems"],
+        )
+    )
+
+    assert "distributed systems" in output.question_text.lower()
+    assert output.topic_tag == "distributed_systems"

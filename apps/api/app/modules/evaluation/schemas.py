@@ -46,6 +46,12 @@ class EvaluationContext:
     answer_id: UUID | None = None
     candidate_profile: CandidateProfile | None = None
     historical_weaknesses: list[str] = field(default_factory=list)
+    candidate_skills: list[str] = field(default_factory=list)
+    relevant_experience: list[str] = field(default_factory=list)
+    role_responsibilities: list[str] = field(default_factory=list)
+    technical_focus_areas: list[str] = field(default_factory=list)
+    behavioral_focus_areas: list[str] = field(default_factory=list)
+    evaluation_rubric_hints: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

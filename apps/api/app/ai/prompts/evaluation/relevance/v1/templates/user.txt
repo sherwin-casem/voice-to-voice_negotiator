@@ -6,11 +6,17 @@ Question [{topic_tag}]:
 Candidate answer:
 {answer_text}
 
-Resume summary:
+Prepared resume summary:
 {resume_summary}
 
-Job description summary:
+Prepared job description summary:
 {job_description_summary}
+
+Selected candidate skills: {candidate_skills}
+Selected role responsibilities: {role_responsibilities}
+Technical focus areas: {technical_focus_areas}
+Behavioral focus areas: {behavioral_focus_areas}
+Evaluation rubric hints: {evaluation_rubric_hints}
 
 Prior conversation:
 {prior_turns}

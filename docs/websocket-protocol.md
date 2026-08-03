@@ -366,13 +366,15 @@ The voice pipeline never embeds LLM prompts. Interviewer reasoning remains in th
 
 ### MVP provider status
 
-| Provider | MVP implementation |
-|----------|-------------------|
-| STT | `MockSpeechToTextProvider` (deterministic, streaming-capable interface) |
-| TTS | `MockTextToSpeechProvider` (synthetic PCM chunks) |
-| LLM / interviewer | Existing mock interviewer agent |
+| Layer | MVP implementation |
+|-------|-------------------|
+| Voice STT (mock) | `MockSpeechToTextProvider` in `app/modules/voice/providers/mock.py` |
+| Voice STT (OpenAI) | `SpeechToTextAdapter` wrapping `app/ai/providers` STT |
+| Voice TTS (mock) | `MockTextToSpeechProvider` in `app/modules/voice/providers/mock.py` |
+| Voice TTS (OpenAI) | `TextToSpeechAdapter` wrapping `app/ai/providers` TTS |
+| LLM / interviewer | Interviewer agent via interview orchestrator |
 
-Replace mock providers with OpenAI (or other) adapters by implementing the same provider protocols; no changes to the WebSocket handler are required.
+Provider selection is controlled by `AI_PROVIDER=mock|openai` and wired in `build_voice_providers()`. Replace providers by implementing the voice-layer protocols (`SpeechToTextProvider`, `TextToSpeechProvider`) or by extending the AI adapter layer; the WebSocket handler and voice pipeline remain unchanged.
 
 ---
 

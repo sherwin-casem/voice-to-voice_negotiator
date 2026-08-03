@@ -1,12 +1,20 @@
-import pytest
-
-pytestmark = pytest.mark.feature
-
 import json
 import uuid
 
-from app.modules.voice.protocol.parser import ProtocolValidationError, parse_client_envelope
-from app.modules.voice.protocol.types import AUDIO_INPUT, SESSION_START, SPEECH_END
+import pytest
+
+from app.modules.voice.protocol.parser import (
+    ProtocolValidationError,
+    build_server_envelope,
+    parse_client_envelope,
+)
+from app.modules.voice.protocol.events import SessionErrorPayload
+from app.modules.voice.protocol.types import (
+    AUDIO_INPUT,
+    SESSION_ERROR,
+    SESSION_START,
+    SPEECH_END,
+)
 
 
 def test_parse_session_start_event() -> None:
@@ -53,3 +61,17 @@ def test_parse_speech_end_event() -> None:
     )
     assert envelope.type == SPEECH_END
     assert payload.timestamp_ms == 1234
+
+
+def test_build_server_envelope_serializes_payload() -> None:
+    message = build_server_envelope(
+        SESSION_ERROR,
+        SessionErrorPayload(code="NOT_STARTED", message="Send session.start first", recoverable=True),
+        request_id="req-9",
+        timestamp_ms=1000,
+    )
+
+    assert message["type"] == SESSION_ERROR
+    assert message["payload"]["code"] == "NOT_STARTED"
+    assert message["request_id"] == "req-9"
+    assert message["timestamp_ms"] == 1000

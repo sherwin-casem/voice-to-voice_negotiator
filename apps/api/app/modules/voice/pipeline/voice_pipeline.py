@@ -7,7 +7,6 @@ from uuid import UUID
 from app.core.exceptions import AppError
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.voice.pipeline.turn_buffer import TurnAudioBuffer
-from app.modules.voice.providers.base import TextToSpeechProvider
 from app.modules.voice.providers.base import SpeechToTextProvider, TextToSpeechProvider
 from app.modules.voice.protocol.events import (
     AudioOutputPayload,

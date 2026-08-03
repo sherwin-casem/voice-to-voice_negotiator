@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.feature
-
 from app.ai.prompts.interviewer.v1 import build_interviewer_messages
 from app.ai.schemas.interviewer import InterviewerContext, PriorTurn
 from app.db.enums import InterviewType

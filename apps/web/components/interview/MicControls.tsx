@@ -5,6 +5,7 @@ export function MicControls({
   isEnabled,
   isRecording,
   permissionDenied,
+  canAnswer,
   onToggleMic,
   onFinishAnswer,
   disabled,
@@ -12,6 +13,7 @@ export function MicControls({
   isEnabled: boolean;
   isRecording: boolean;
   permissionDenied: boolean;
+  canAnswer: boolean;
   onToggleMic: () => void;
   onFinishAnswer: () => void;
   disabled?: boolean;
@@ -26,7 +28,7 @@ export function MicControls({
         <Button
           variant={isRecording ? "danger" : "secondary"}
           onClick={onToggleMic}
-          disabled={disabled || permissionDenied}
+          disabled={disabled || permissionDenied || !canAnswer}
           aria-pressed={isRecording}
         >
           {permissionDenied
@@ -37,7 +39,7 @@ export function MicControls({
                 ? "Start microphone"
                 : "Enable microphone"}
         </Button>
-        <Button onClick={onFinishAnswer} disabled={disabled || !isEnabled}>
+        <Button onClick={onFinishAnswer} disabled={disabled || !isEnabled || !canAnswer}>
           Finish answer
         </Button>
       </div>

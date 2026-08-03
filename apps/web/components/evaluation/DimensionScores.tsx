@@ -12,27 +12,35 @@ function formatLabel(key: string): string {
     .join(" ");
 }
 
-export function DimensionScores({ scores }: DimensionScoresProps) {
+export function DimensionScores({ scores, bare = false }: DimensionScoresProps & { bare?: boolean }) {
+  const list = (
+    <ul className="space-y-4">
+      {Object.entries(scores).map(([key, value]) => (
+        <li key={key}>
+          {value !== null ? (
+            <MetricBar label={formatLabel(key)} value={`${value}%`} percent={value} />
+          ) : (
+            <div>
+              <p className="text-sm text-[var(--text-muted)]">{formatLabel(key)}</p>
+              <p className="text-xs text-[var(--text-dim)]">
+                Not applicable for this interview type.
+              </p>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (bare) {
+    return list;
+  }
+
   return (
     <Card aria-labelledby="dimension-scores-title">
       <CardHeading id="dimension-scores-title">Dimension scores</CardHeading>
       <CardDescription>Breakdown across evaluation dimensions.</CardDescription>
-      <ul className="mt-4 space-y-4">
-        {Object.entries(scores).map(([key, value]) => (
-          <li key={key}>
-            {value !== null ? (
-              <MetricBar label={formatLabel(key)} value={`${value}%`} percent={value} />
-            ) : (
-              <div>
-                <p className="text-sm text-[var(--text-muted)]">{formatLabel(key)}</p>
-                <p className="text-xs text-[var(--text-dim)]">
-                  Not applicable for this interview type.
-                </p>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+      <div className="mt-4">{list}</div>
     </Card>
   );
 }

@@ -7,12 +7,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CountdownTimer } from "@/components/interview/CountdownTimer";
 import { ConnectionStatus } from "@/components/interview/ConnectionStatus";
 import { CurrentQuestion } from "@/components/interview/CurrentQuestion";
+import { InterviewFunnelStepper } from "@/components/interview/InterviewFunnelStepper";
 import { InterviewerAvatar } from "@/components/interview/InterviewerAvatar";
 import { LiveTranscript } from "@/components/interview/LiveTranscript";
 import { MicControls } from "@/components/interview/MicControls";
 import { StageStepper } from "@/components/interview/StageStepper";
 import { PracticeModeBadge } from "@/components/ui/Badge";
-import { Alert, PreviewMetricsBanner, Spinner } from "@/components/ui/Alert";
+import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { MetricBar } from "@/components/ui/MetricBar";
@@ -23,6 +24,64 @@ import { useSession } from "@/hooks/useSession";
 import { useVoiceInterview } from "@/hooks/useVoiceInterview";
 import { ApiClientError } from "@/lib/api-client";
 import { getSession } from "@/lib/interview-api";
+
+function ConnectionTipsPanel() {
+  return (
+    <GlassPanel className="p-5 lg:hidden">
+      <h2 className="text-section-label mb-4">Before you start</h2>
+      <ul className="space-y-2 text-sm text-[var(--text-muted)]">
+        <li>Use headphones to reduce echo.</li>
+        <li>Allow microphone access when prompted.</li>
+        <li>Find a quiet space with stable internet.</li>
+        <li>Tap the mic button to record your answer.</li>
+      </ul>
+    </GlassPanel>
+  );
+}
+
+function DemoMetricsPanel({
+  metrics,
+}: {
+  metrics: ReturnType<typeof useLiveMetricsPreview>["metrics"];
+}) {
+  return (
+    <GlassPanel className="hidden p-5 lg:block">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2 className="text-section-label">Demo metrics</h2>
+        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
+          Preview
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-[var(--text-dim)]">
+        Sample scores for layout preview. Real-time evaluation metrics are coming soon.
+      </p>
+      <div className="space-y-4">
+        <MetricBar
+          label={metrics.confidence.label}
+          value={metrics.confidence.value}
+          percent={metrics.confidence.percent}
+        />
+        <MetricBar
+          label={metrics.speakingPace.label}
+          value={metrics.speakingPace.value}
+          percent={metrics.speakingPace.percent}
+          variant="success"
+        />
+        <MetricBar
+          label={metrics.fillerWords.label}
+          value={metrics.fillerWords.value}
+          percent={metrics.fillerWords.percent}
+          variant="success"
+        />
+        <MetricBar
+          label={metrics.clarity.label}
+          value={metrics.clarity.value}
+          percent={metrics.clarity.percent}
+        />
+      </div>
+    </GlassPanel>
+  );
+}
 
 export default function LiveInterviewPage() {
   const params = useParams<{ sessionId: string }>();
@@ -199,8 +258,9 @@ export default function LiveInterviewPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header row */}
+    <div className="space-y-4 pb-24 lg:pb-4">
+      <InterviewFunnelStepper current="live" sessionId={sessionId} className="mb-2" />
+
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
           <h1 className="text-xl font-bold tracking-widest text-[var(--text-primary)] sm:text-2xl">
@@ -214,7 +274,7 @@ export default function LiveInterviewPage() {
           isEnded={isEnded}
           className="order-3 lg:order-none"
         />
-        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+        <div className="hidden flex-wrap items-center gap-2 lg:flex lg:justify-end">
           <PracticeModeBadge />
           {canStartInterview ? (
             <Button onClick={handleStartInterview} disabled={isStarting}>
@@ -245,10 +305,10 @@ export default function LiveInterviewPage() {
         </div>
       )}
 
-      {/* 3-column layout */}
+      <ConnectionTipsPanel />
+
       <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
-        {/* Notes */}
-        <aside className="lg:col-span-3">
+        <aside className="order-2 lg:order-none lg:col-span-3">
           <GlassPanel className="h-full p-5">
             <h2 className="text-section-label mb-4">Notes</h2>
             <ul className="space-y-2 text-sm text-[var(--text-muted)]">
@@ -264,8 +324,7 @@ export default function LiveInterviewPage() {
           </GlassPanel>
         </aside>
 
-        {/* Center: avatar + question + controls */}
-        <section className="space-y-4 lg:col-span-6">
+        <section className="order-1 space-y-4 lg:order-none lg:col-span-6">
           <InterviewerAvatar
             state={voice.interviewerState}
             audioLevel={voice.audioLevel}
@@ -276,6 +335,46 @@ export default function LiveInterviewPage() {
             question={voice.currentQuestion}
             sequenceNum={voice.currentQuestionSequence}
           />
+          <div className="hidden lg:block">
+            <MicControls
+              isEnabled={voice.isMicEnabled}
+              isRecording={voice.isRecording}
+              permissionDenied={voice.permissionDenied}
+              canAnswer={canAnswer}
+              onToggleMic={handleToggleMic}
+              onFinishAnswer={voice.finishAnswer}
+              disabled={!voice.isInterviewStarted}
+              compact
+            />
+          </div>
+        </section>
+
+        <aside className="order-3 space-y-4 lg:col-span-3">
+          <DemoMetricsPanel metrics={metrics} />
+
+          <GlassPanel className="p-5">
+            <CountdownTimer elapsedSeconds={elapsedSeconds} targetMinutes={targetMinutes} />
+          </GlassPanel>
+        </aside>
+      </div>
+
+      <LiveTranscript entries={voice.transcript} />
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/95 p-4 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-lg flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <PracticeModeBadge />
+            {canStartInterview ? (
+              <Button onClick={handleStartInterview} disabled={isStarting}>
+                {isStarting ? "Starting…" : "Start"}
+              </Button>
+            ) : null}
+            {voice.isInterviewStarted ? (
+              <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
+                {isEnding ? "Ending…" : "End"}
+              </Button>
+            ) : null}
+          </div>
           <MicControls
             isEnabled={voice.isMicEnabled}
             isRecording={voice.isRecording}
@@ -286,48 +385,8 @@ export default function LiveInterviewPage() {
             disabled={!voice.isInterviewStarted}
             compact
           />
-        </section>
-
-        {/* Metrics + timer */}
-        <aside className="space-y-4 lg:col-span-3">
-          <GlassPanel className="p-5">
-            <h2 className="text-section-label mb-4">Real-Time Metrics</h2>
-            <div className="space-y-4">
-              <MetricBar
-                label={metrics.confidence.label}
-                value={metrics.confidence.value}
-                percent={metrics.confidence.percent}
-              />
-              <MetricBar
-                label={metrics.speakingPace.label}
-                value={metrics.speakingPace.value}
-                percent={metrics.speakingPace.percent}
-                variant="success"
-              />
-              <MetricBar
-                label={metrics.fillerWords.label}
-                value={metrics.fillerWords.value}
-                percent={metrics.fillerWords.percent}
-                variant="success"
-              />
-              <MetricBar
-                label={metrics.clarity.label}
-                value={metrics.clarity.value}
-                percent={metrics.clarity.percent}
-              />
-            </div>
-            <div className="mt-4">
-              <PreviewMetricsBanner />
-            </div>
-          </GlassPanel>
-
-          <GlassPanel className="p-5">
-            <CountdownTimer elapsedSeconds={elapsedSeconds} targetMinutes={targetMinutes} />
-          </GlassPanel>
-        </aside>
+        </div>
       </div>
-
-      <LiveTranscript entries={voice.transcript} />
     </div>
   );
 }

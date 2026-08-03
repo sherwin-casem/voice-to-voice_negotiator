@@ -19,7 +19,7 @@ export default function GlobalError({
     <main className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="text-2xl font-semibold text-slate-100">Something went wrong</h1>
       <p className="text-sm text-slate-400">
-        An unexpected error occurred. You can retry or return to the dashboard.
+        An unexpected error occurred. You can retry or return home.
       </p>
       <div className="flex flex-wrap justify-center gap-3">
         <button
@@ -29,8 +29,8 @@ export default function GlobalError({
         >
           Try again
         </button>
-        <ButtonLink href="/dashboard" variant="secondary">
-          Back to dashboard
+        <ButtonLink href="/interviews/new" variant="secondary">
+          Back to home
         </ButtonLink>
       </div>
     </main>

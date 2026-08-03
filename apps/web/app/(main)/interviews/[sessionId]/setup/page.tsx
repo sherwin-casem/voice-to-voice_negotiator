@@ -2,9 +2,11 @@
 
 import type { ConfigureSessionRequest, DifficultyLevel, InterviewType } from "@voice/shared";
 import { INTERVIEW_TYPE_LABELS } from "@voice/shared";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { InterviewFunnelStepper } from "@/components/interview/InterviewFunnelStepper";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -99,10 +101,21 @@ export default function InterviewSetupPage() {
 
   return (
     <>
+      <InterviewFunnelStepper current="setup" sessionId={sessionId} className="mb-6" />
+
       <PageHeader
         title="Interview setup"
         description="Configure interview type, difficulty, and optional resume or job description context."
       />
+
+      <p className="mb-6">
+        <Link
+          href="/interviews/new"
+          className="text-sm font-medium text-teal-400 underline-offset-2 hover:text-teal-300 hover:underline"
+        >
+          ← Back to create
+        </Link>
+      </p>
 
       <form className="grid gap-6 lg:grid-cols-2" onSubmit={handleSubmit}>
         <Card>

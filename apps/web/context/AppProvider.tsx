@@ -1,36 +1,40 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 
-import { env } from "@/lib/env";
-import { getDevUserId, setDevUserId } from "@/lib/user-id";
+import {
+  getServerReadySnapshot,
+  getClientReadySnapshot,
+  readStoredUserId,
+  getServerUserId,
+  setDevUserId,
+  subscribeClientReady,
+  subscribeUserId,
+} from "@/lib/client-store";
 
 interface AppContextValue {
   userId: string;
+  isUserReady: boolean;
   setUserId: (value: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-function readInitialUserId(): string {
-  if (typeof window === "undefined") {
-    return env.devUserId ?? "";
-  }
-  return getDevUserId();
-}
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserIdState] = useState(readInitialUserId);
+  const userId = useSyncExternalStore(subscribeUserId, readStoredUserId, getServerUserId);
+  const isUserReady = useSyncExternalStore(
+    subscribeClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
 
   const value = useMemo(
     () => ({
       userId,
-      setUserId: (next: string) => {
-        setDevUserId(next);
-        setUserIdState(next);
-      },
+      isUserReady,
+      setUserId: setDevUserId,
     }),
-    [userId],
+    [isUserReady, userId],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, PreviewDataBanner, Spinner } from "@/components/ui/Alert";
 import { SessionStatusBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { useAppContext } from "@/context/AppProvider";
 import { ApiClientError } from "@/lib/api-client";
 import { formatDate } from "@/lib/format";
@@ -97,26 +97,30 @@ export default function InterviewResultsPage() {
 
       {session ? (
         <Card className="mb-6">
-          <CardTitle>Session summary</CardTitle>
+          <CardHeading>Session summary</CardHeading>
           <CardDescription>Loaded from the interview session API.</CardDescription>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-zinc-600">Title</dt>
-              <dd className="font-medium text-zinc-900">{session.title ?? "Untitled session"}</dd>
+              <dt className="text-[var(--text-muted)]">Title</dt>
+              <dd className="font-medium text-[var(--text-primary)]">
+                {session.title ?? "Untitled session"}
+              </dd>
             </div>
             <div>
-              <dt className="text-zinc-600">Status</dt>
+              <dt className="text-[var(--text-muted)]">Status</dt>
               <dd className="mt-1">
                 <SessionStatusBadge status={session.status} />
               </dd>
             </div>
             <div>
-              <dt className="text-zinc-600">Questions asked</dt>
-              <dd className="font-medium text-zinc-900">{session.question_count}</dd>
+              <dt className="text-[var(--text-muted)]">Questions asked</dt>
+              <dd className="font-medium text-[var(--text-primary)]">{session.question_count}</dd>
             </div>
             <div>
-              <dt className="text-zinc-600">Ended</dt>
-              <dd className="font-medium text-zinc-900">{formatDate(session.ended_at)}</dd>
+              <dt className="text-[var(--text-muted)]">Ended</dt>
+              <dd className="font-medium text-[var(--text-primary)]">
+                {formatDate(session.ended_at)}
+              </dd>
             </div>
           </dl>
         </Card>

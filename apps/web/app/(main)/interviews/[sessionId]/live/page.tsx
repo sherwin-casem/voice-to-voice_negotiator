@@ -2,22 +2,23 @@
 
 import type { InterviewSessionStatus, SessionResponse } from "@voice/shared";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { AudioActivityIndicator } from "@/components/interview/AudioActivityIndicator";
+import { CountdownTimer } from "@/components/interview/CountdownTimer";
 import { ConnectionStatus } from "@/components/interview/ConnectionStatus";
 import { CurrentQuestion } from "@/components/interview/CurrentQuestion";
-import { InterviewStatusPanel } from "@/components/interview/InterviewStatusPanel";
-import { InterviewTimer } from "@/components/interview/InterviewTimer";
-import { InterviewerStatePanel } from "@/components/interview/InterviewerStatePanel";
+import { InterviewerAvatar } from "@/components/interview/InterviewerAvatar";
 import { LiveTranscript } from "@/components/interview/LiveTranscript";
 import { MicControls } from "@/components/interview/MicControls";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Alert, Spinner } from "@/components/ui/Alert";
+import { StageStepper } from "@/components/interview/StageStepper";
+import { PracticeModeBadge } from "@/components/ui/Badge";
+import { Alert, PreviewMetricsBanner, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { GlassPanel } from "@/components/ui/GlassPanel";
+import { MetricBar } from "@/components/ui/MetricBar";
 import { useAppContext } from "@/context/AppProvider";
 import { useInterviewTimer } from "@/hooks/useInterviewTimer";
+import { useLiveMetricsPreview } from "@/hooks/useLiveMetricsPreview";
 import { useVoiceInterview } from "@/hooks/useVoiceInterview";
 import { ApiClientError } from "@/lib/api-client";
 import { getSession } from "@/lib/interview-api";
@@ -33,6 +34,8 @@ export default function LiveInterviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+
+  const { metrics } = useLiveMetricsPreview();
 
   const refreshSession = useCallback(async () => {
     if (!userId || !sessionId) {
@@ -69,6 +72,30 @@ export default function LiveInterviewPage() {
   });
 
   const elapsedSeconds = useInterviewTimer(session?.status === "active");
+  const targetMinutes =
+    session?.config && typeof session.config.target_duration_minutes === "number"
+      ? session.config.target_duration_minutes
+      : null;
+
+  const notes = useMemo(() => {
+    const items: string[] = [];
+    const config = session?.config;
+    if (config?.target_role) {
+      items.push(`Target role: ${config.target_role}`);
+    }
+    if (config?.difficulty) {
+      items.push(`Difficulty: ${config.difficulty}`);
+    }
+    if (config?.company_context) {
+      items.push(`Company: ${config.company_context}`);
+    }
+    if (items.length === 0) {
+      items.push("Review your resume highlights before answering.");
+      items.push("Use the STAR method for behavioral questions.");
+      items.push("Speak clearly and pause before follow-ups.");
+    }
+    return items;
+  }, [session?.config]);
 
   useEffect(() => {
     if (!userId || !sessionId) {
@@ -158,90 +185,153 @@ export default function LiveInterviewPage() {
     voice.connectionState === "connected" &&
     (voice.isAwaitingAnswer || voice.interviewerState === "listening");
 
+  const isEnded =
+    session?.status === "completed" ||
+    session?.status === "abandoned" ||
+    session?.status === "evaluation_failed";
+
   if (isLoading) {
     return <Spinner label="Loading live interview" />;
   }
 
   if (loadError && !session) {
-    return <Alert variant="error" title="Unable to open interview">{loadError}</Alert>;
+    return (
+      <Alert variant="error" title="Unable to open interview">
+        {loadError}
+      </Alert>
+    );
   }
 
   return (
-    <>
-      <PageHeader
-        title={session?.title ?? "Live interview"}
-        description="Practice with the AI interviewer in real time."
-        actions={
-          <>
-            {canStartInterview ? (
-              <Button onClick={handleStartInterview} disabled={isStarting}>
-                Start interview
-              </Button>
-            ) : null}
-            {voice.isInterviewStarted ? (
-              <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
-                End interview
-              </Button>
-            ) : null}
-            <ButtonLink href={`/interviews/${sessionId}/results`} variant="secondary">
-              View results
-            </ButtonLink>
-          </>
-        }
-      />
-
-      {loadError ? (
-        <div className="mb-6">
-          <Alert variant="error">{loadError}</Alert>
-        </div>
-      ) : null}
-
-      {voice.errorMessage ? (
-        <div className="mb-6">
-          <Alert variant="warning" title="Connection issue">
-            {voice.errorMessage}
-          </Alert>
-        </div>
-      ) : null}
-
-      {voice.permissionDenied ? (
-        <div className="mb-6">
-          <Alert variant="warning" title="Microphone blocked">
-            Allow microphone access in your browser settings to answer by voice.
-          </Alert>
-        </div>
-      ) : null}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-1">
-          {session ? (
-            <InterviewStatusPanel status={session.status} questionCount={session.question_count} />
-          ) : null}
-          <InterviewerStatePanel state={voice.interviewerState} />
+    <div className="space-y-4">
+      {/* Header row */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+          <h1 className="text-xl font-bold tracking-widest text-[var(--text-primary)] sm:text-2xl">
+            MOCK INTERVIEW
+          </h1>
           <ConnectionStatus state={voice.connectionState} />
-          <InterviewTimer elapsedSeconds={elapsedSeconds} />
         </div>
+        <StageStepper
+          interviewType={session?.interview_type}
+          isStarted={voice.isInterviewStarted}
+          isEnded={isEnded}
+          className="order-3 lg:order-none"
+        />
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <PracticeModeBadge />
+          {canStartInterview ? (
+            <Button onClick={handleStartInterview} disabled={isStarting}>
+              {isStarting ? "Starting…" : "Start"}
+            </Button>
+          ) : null}
+          {voice.isInterviewStarted ? (
+            <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
+              {isEnding ? "Ending…" : "End interview"}
+            </Button>
+          ) : null}
+        </div>
+      </header>
 
-        <div className="space-y-6 lg:col-span-2">
+      {(loadError || voice.errorMessage || voice.permissionDenied) && (
+        <div className="space-y-2">
+          {loadError ? <Alert variant="error">{loadError}</Alert> : null}
+          {voice.errorMessage ? (
+            <Alert variant="warning" title="Connection issue">
+              {voice.errorMessage}
+            </Alert>
+          ) : null}
+          {voice.permissionDenied ? (
+            <Alert variant="warning" title="Microphone blocked">
+              Allow microphone access in your browser settings to answer by voice.
+            </Alert>
+          ) : null}
+        </div>
+      )}
+
+      {/* 3-column layout */}
+      <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
+        {/* Notes */}
+        <aside className="lg:col-span-3">
+          <GlassPanel className="h-full p-5">
+            <h2 className="text-section-label mb-4">Notes</h2>
+            <ul className="space-y-2 text-sm text-[var(--text-muted)]">
+              {notes.map((note) => (
+                <li key={note} className="flex gap-2">
+                  <span className="text-teal-500" aria-hidden="true">
+                    •
+                  </span>
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </GlassPanel>
+        </aside>
+
+        {/* Center: avatar + question + controls */}
+        <section className="space-y-4 lg:col-span-6">
+          <InterviewerAvatar
+            state={voice.interviewerState}
+            audioLevel={voice.audioLevel}
+            isRecording={voice.isRecording}
+            questionSequence={voice.currentQuestionSequence}
+          />
           <CurrentQuestion
             question={voice.currentQuestion}
             sequenceNum={voice.currentQuestionSequence}
           />
-          <LiveTranscript entries={voice.transcript} />
-          <div className="grid gap-6 md:grid-cols-2">
-            <MicControls
-              isEnabled={voice.isMicEnabled}
-              isRecording={voice.isRecording}
-              permissionDenied={voice.permissionDenied}
-              canAnswer={canAnswer}
-              onToggleMic={handleToggleMic}
-              onFinishAnswer={voice.finishAnswer}
-              disabled={!voice.isInterviewStarted}
-            />
-            <AudioActivityIndicator level={voice.audioLevel} isActive={voice.isRecording} />
-          </div>
-        </div>
+          <MicControls
+            isEnabled={voice.isMicEnabled}
+            isRecording={voice.isRecording}
+            permissionDenied={voice.permissionDenied}
+            canAnswer={canAnswer}
+            onToggleMic={handleToggleMic}
+            onFinishAnswer={voice.finishAnswer}
+            disabled={!voice.isInterviewStarted}
+            compact
+          />
+        </section>
+
+        {/* Metrics + timer */}
+        <aside className="space-y-4 lg:col-span-3">
+          <GlassPanel className="p-5">
+            <h2 className="text-section-label mb-4">Real-Time Metrics</h2>
+            <div className="space-y-4">
+              <MetricBar
+                label={metrics.confidence.label}
+                value={metrics.confidence.value}
+                percent={metrics.confidence.percent}
+              />
+              <MetricBar
+                label={metrics.speakingPace.label}
+                value={metrics.speakingPace.value}
+                percent={metrics.speakingPace.percent}
+                variant="success"
+              />
+              <MetricBar
+                label={metrics.fillerWords.label}
+                value={metrics.fillerWords.value}
+                percent={metrics.fillerWords.percent}
+                variant="success"
+              />
+              <MetricBar
+                label={metrics.clarity.label}
+                value={metrics.clarity.value}
+                percent={metrics.clarity.percent}
+              />
+            </div>
+            <div className="mt-4">
+              <PreviewMetricsBanner />
+            </div>
+          </GlassPanel>
+
+          <GlassPanel className="p-5">
+            <CountdownTimer elapsedSeconds={elapsedSeconds} targetMinutes={targetMinutes} />
+          </GlassPanel>
+        </aside>
       </div>
-    </>
+
+      <LiveTranscript entries={voice.transcript} />
+    </div>
   );
 }

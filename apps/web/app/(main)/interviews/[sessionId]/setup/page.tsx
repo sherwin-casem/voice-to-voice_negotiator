@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/FormControls";
 import { useAppContext } from "@/context/AppProvider";
 import { ApiClientError } from "@/lib/api-client";
@@ -142,7 +142,7 @@ export default function InterviewSetupPage() {
 
       <form className="grid gap-6 lg:grid-cols-2" onSubmit={handleSubmit}>
         <Card>
-          <CardTitle>Interview configuration</CardTitle>
+          <CardHeading>Interview configuration</CardHeading>
           <CardDescription>These settings drive the AI interviewer behavior.</CardDescription>
           <div className="mt-4 space-y-4">
             <div>
@@ -205,7 +205,7 @@ export default function InterviewSetupPage() {
         </Card>
 
         <Card>
-          <CardTitle>Context documents</CardTitle>
+          <CardHeading>Context documents</CardHeading>
           <CardDescription>Optional resume and job description text for tailored questions.</CardDescription>
           <div className="mt-4 space-y-4">
             <div>

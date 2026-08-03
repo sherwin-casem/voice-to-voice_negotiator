@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label } from "@/components/ui/FormControls";
 import { Spinner } from "@/components/ui/Alert";
 import { useAppContext } from "@/context/AppProvider";
@@ -49,8 +49,8 @@ export default function CreateInterviewPage() {
         description="Start a new practice session. You will configure interview type and context next."
       />
 
-      <Card className="max-w-xl">
-        <CardTitle>Session details</CardTitle>
+      <Card className="mx-auto max-w-xl">
+        <CardHeading>Session details</CardHeading>
         <CardDescription>Optional title to help you identify this session later.</CardDescription>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>

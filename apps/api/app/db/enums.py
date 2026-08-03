@@ -38,6 +38,7 @@ class AgentName(str, enum.Enum):
     COMMUNICATION_EVALUATION = "communication_evaluation"
     TECHNICAL_EVALUATION = "technical_evaluation"
     BEHAVIORAL_EVALUATION = "behavioral_evaluation"
+    RELEVANCE_EVALUATION = "relevance_evaluation"
     HIRING_MANAGER_EVALUATION = "hiring_manager_evaluation"
     SCORING_JUDGE = "scoring_judge"
     IMPROVEMENT_COACH = "improvement_coach"

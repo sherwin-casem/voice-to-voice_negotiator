@@ -16,14 +16,8 @@ export function LandingHero() {
 
         <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl">
           Most prep tools score what you{" "}
-          <em className="bg-gradient-to-r from-teal-300 to-cyan-300 bg-clip-text font-[family-name:var(--font-instrument-serif)] not-italic text-transparent">
-            write
-          </em>
-          . We coach how you{" "}
-          <em className="bg-gradient-to-r from-cyan-300 to-teal-200 bg-clip-text font-[family-name:var(--font-instrument-serif)] not-italic text-transparent">
-            speak
-          </em>
-          .
+          <span className="text-teal-300">write</span>. We coach how you{" "}
+          <span className="text-cyan-300">speak</span>.
         </h1>
 
         <p className="mt-6 max-w-xl text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">

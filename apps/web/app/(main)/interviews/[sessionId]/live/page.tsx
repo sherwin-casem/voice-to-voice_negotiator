@@ -136,12 +136,24 @@ export default function LiveInterviewPage() {
         status: loaded.status,
         question_count: loaded.question_count,
       });
+      return loaded.status;
     } catch (caught) {
       setRefreshError(
         caught instanceof ApiClientError ? caught.message : "Unable to refresh session.",
       );
+      return null;
     }
   }, [applySessionPatch, sessionId, userId]);
+
+  const refreshSessionUntilActive = useCallback(async () => {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const status = await refreshSession();
+      if (status === "active" || status === "completing") {
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+    }
+  }, [refreshSession]);
 
   const voice = useVoiceInterview(sessionId, userId, {
     onSessionStatusChange: (status, questionCount) => {
@@ -158,7 +170,18 @@ export default function LiveInterviewPage() {
     },
   });
 
-  const elapsedSeconds = useInterviewTimer(session?.status === "active");
+  const isSessionTerminal =
+    session?.status === "completed" ||
+    session?.status === "abandoned" ||
+    session?.status === "evaluation_failed";
+
+  const isTimerRunning =
+    !isSessionTerminal &&
+    (voice.isInterviewStarted ||
+      session?.status === "active" ||
+      session?.status === "completing");
+
+  const elapsedSeconds = useInterviewTimer(isTimerRunning);
   const targetMinutes =
     session?.config && typeof session.config.target_duration_minutes === "number"
       ? session.config.target_duration_minutes
@@ -200,7 +223,8 @@ export default function LiveInterviewPage() {
     setRefreshError(null);
     try {
       await voice.startInterview();
-      await refreshSession();
+      applySessionPatch({ status: "active" });
+      void refreshSessionUntilActive();
     } catch (caught) {
       setRefreshError(
         caught instanceof Error ? caught.message : "Unable to start voice interview.",

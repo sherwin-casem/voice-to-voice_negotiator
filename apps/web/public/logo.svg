@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" fill="none" role="img" aria-label="VoxForge">
+  <defs>
+    <linearGradient id="logoGrad" x1="10" y1="24" x2="38" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="logoGlow" cx="24" cy="24" r="14" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22d3ee" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#14b8a6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="48" height="48" rx="12" fill="#0a1628"/>
+  <circle cx="24" cy="24" r="14" fill="url(#logoGlow)"/>
+  <path d="M24 24 C19 24 14 19 12 13" stroke="url(#logoGrad)" stroke-width="2.75" stroke-linecap="round"/>
+  <path d="M24 24 C19 24 14 29 12 35" stroke="url(#logoGrad)" stroke-width="2.75" stroke-linecap="round"/>
+  <path d="M24 24 C21 24 18 22 16 18" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+  <path d="M24 24 C29 24 34 19 36 13" stroke="url(#logoGrad)" stroke-width="2.75" stroke-linecap="round"/>
+  <path d="M24 24 C29 24 34 29 36 35" stroke="url(#logoGrad)" stroke-width="2.75" stroke-linecap="round"/>
+  <path d="M24 24 C27 24 30 22 32 18" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="24" cy="24" r="3.25" fill="url(#logoGrad)"/>
+  <circle cx="24" cy="24" r="1.25" fill="#0a1628"/>
+  <text x="58" y="31" fill="#f8fafc" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="600" letter-spacing="-0.02em">Vox<tspan fill="#14b8a6">Forge</tspan></text>
+</svg>

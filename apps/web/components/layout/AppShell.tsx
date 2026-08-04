@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Logo } from "@/components/brand/Logo";
 import { PreviewNoticeBanner } from "@/components/ui/PreviewNotice";
 import { cn } from "@/lib/format";
 
@@ -44,17 +45,7 @@ export function AppShell({
       ) : (
         <header className="sticky top-0 z-40 border-b border-[var(--border-glass)] bg-[var(--bg-deep)]/80 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-widest text-teal-400/80">
-                Voice Interview Negotiator
-              </p>
-              <Link
-                href="/interviews/new"
-                className="text-lg font-semibold text-[var(--text-primary)] hover:text-teal-300"
-              >
-                Practice Studio
-              </Link>
-            </div>
+            <Logo />
             <nav aria-label="Primary" className="flex flex-wrap gap-1">
               {NAV_ITEMS.map((item) => {
                 const active =

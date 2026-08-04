@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <defs>
+    <linearGradient id="appleGrad" x1="40" y1="90" x2="140" y2="90" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="appleGlow" cx="90" cy="90" r="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22d3ee" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#14b8a6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="#0a1628"/>
+  <circle cx="90" cy="90" r="52" fill="url(#appleGlow)"/>
+  <path d="M90 90 C72 90 56 74 48 52" stroke="url(#appleGrad)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M90 90 C72 90 56 106 48 128" stroke="url(#appleGrad)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M90 90 C78 90 68 84 62 72" stroke="url(#appleGrad)" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  <path d="M90 90 C108 90 124 74 132 52" stroke="url(#appleGrad)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M90 90 C108 90 124 106 132 128" stroke="url(#appleGrad)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M90 90 C102 90 112 84 118 72" stroke="url(#appleGrad)" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="90" cy="90" r="12" fill="url(#appleGrad)"/>
+  <circle cx="90" cy="90" r="4.5" fill="#0a1628"/>
+</svg>

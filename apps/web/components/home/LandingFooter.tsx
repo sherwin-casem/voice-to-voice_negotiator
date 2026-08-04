@@ -33,23 +33,18 @@ export function LandingFooter() {
           <div>
             <p className="text-section-label">Product</p>
             <ul className="mt-3 space-y-2">
-              {SITE_NAV_LINKS.map((item) => {
-                const section = item.isHash
-                  ? (item.href.replace("/#", "") as "features" | "evaluation" | "practice" | "flow")
-                  : undefined;
-                return (
-                  <li key={item.href}>
-                    <NavLink
-                      href={item.href}
-                      isHash={item.isHash}
-                      section={section}
-                      className="text-sm text-[var(--text-muted)] hover:text-teal-300"
-                    >
-                      {item.label}
-                    </NavLink>
-                  </li>
-                );
-              })}
+              {SITE_NAV_LINKS.map((item) => (
+                <li key={item.href}>
+                  <NavLink
+                    href={item.href}
+                    isHash={item.isHash}
+                    section={item.section}
+                    className="text-sm text-[var(--text-muted)] hover:text-teal-300"
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
             </ul>
           </div>
           <div>

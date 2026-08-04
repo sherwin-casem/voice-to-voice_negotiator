@@ -74,8 +74,7 @@ export const FEATURE_CARDS = [
 ] as const;
 
 export const SITE_NAV_LINKS = [
-  { label: "Features", href: routes.homeSection("features"), isHash: true },
-  { label: "Create Interview", href: routes.createInterview, isHash: false },
-  { label: "Sample Results", href: routes.previewResults, isHash: false },
-  { label: "Progress", href: routes.progress, isHash: false },
+  { label: "Features", href: routes.homeSection("features"), isHash: true, section: "features" as const },
+  { label: "Evaluation", href: routes.homeSection("evaluation"), isHash: true, section: "evaluation" as const },
+  { label: "Voice Practice", href: routes.homeSection("practice"), isHash: true, section: "practice" as const },
 ] as const;

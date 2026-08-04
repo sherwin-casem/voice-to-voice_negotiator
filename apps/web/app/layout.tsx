@@ -15,8 +15,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Voice Interview Negotiator",
-  description: "AI-powered voice interview practice and evaluation",
+  title: {
+    default: "VoxForge",
+    template: "%s · VoxForge",
+  },
+  description:
+    "AI-powered voice interview practice with multi-agent evaluation, scoring, and personalized coaching.",
+  applicationName: "VoxForge",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

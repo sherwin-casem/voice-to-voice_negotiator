@@ -86,7 +86,10 @@ export default function CreateInterviewPage() {
 
       <Card className="mx-auto max-w-xl">
         <CardHeading>Session details</CardHeading>
-        <CardDescription>Optional title to help you identify this session later.</CardDescription>
+        <CardDescription>
+          Optional label for this practice session (for your reference). You will set your target
+          role, interview type, and difficulty on the next setup step.
+        </CardDescription>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <Label htmlFor="title">Title</Label>
@@ -95,7 +98,7 @@ export default function CreateInterviewPage() {
               name="title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Senior Backend Engineer — Technical Round"
+              placeholder="Senior Backend Engineer — Technical Round (optional)"
               maxLength={200}
             />
           </div>

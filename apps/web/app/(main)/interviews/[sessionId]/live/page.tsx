@@ -258,7 +258,7 @@ export default function LiveInterviewPage() {
   }
 
   return (
-    <div className="space-y-4 pb-24 lg:pb-4">
+    <div className="space-y-3 pb-24 lg:pb-4">
       <InterviewFunnelStepper current="live" sessionId={sessionId} className="mb-2" />
 
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -307,7 +307,7 @@ export default function LiveInterviewPage() {
 
       <ConnectionTipsPanel />
 
-      <div className="grid gap-4 lg:grid-cols-12 lg:gap-6">
+      <div className="grid gap-4 lg:grid-cols-12 lg:items-start lg:gap-6">
         <aside className="order-2 lg:order-none lg:col-span-3">
           <GlassPanel className="h-full p-5">
             <h2 className="text-section-label mb-4">Notes</h2>
@@ -358,7 +358,9 @@ export default function LiveInterviewPage() {
         </aside>
       </div>
 
-      <LiveTranscript entries={voice.transcript} />
+      <div className="lg:max-h-48 lg:overflow-y-auto">
+        <LiveTranscript entries={voice.transcript} />
+      </div>
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/95 p-4 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-lg flex-col gap-3">

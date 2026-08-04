@@ -27,7 +27,7 @@ export function InterviewFunnelStepper({
   return (
     <nav
       aria-label="Interview setup progress"
-      className={cn("flex flex-wrap items-center gap-1 sm:gap-2", className)}
+      className={cn("flex flex-wrap items-center gap-2 sm:gap-3", className)}
     >
       {FUNNEL_STEPS.map((step, index) => {
         const isCurrent = step.id === current;
@@ -37,7 +37,7 @@ export function InterviewFunnelStepper({
         const canLink = isPast && (step.id === "create" || Boolean(sessionId));
 
         const stepClass = cn(
-          "rounded-full px-2.5 py-1 text-xs font-medium transition-colors sm:px-3",
+          "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors sm:px-4",
           isCurrent
             ? "bg-teal-500/20 text-teal-300 ring-1 ring-teal-500/40"
             : isPast
@@ -46,9 +46,9 @@ export function InterviewFunnelStepper({
         );
 
         return (
-          <span key={step.id} className="flex items-center gap-1 sm:gap-2">
+          <span key={step.id} className="flex items-center gap-2 sm:gap-3">
             {index > 0 ? (
-              <span className="text-[var(--text-dim)]" aria-hidden="true">
+              <span className="text-sm text-[var(--text-muted)]" aria-hidden="true">
                 →
               </span>
             ) : null}

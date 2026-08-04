@@ -1,16 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-import { Logo } from "@/components/brand/Logo";
+import { SiteNav } from "@/components/navigation/SiteNav";
 import { PreviewNoticeBanner } from "@/components/ui/PreviewNotice";
 import { cn } from "@/lib/format";
-
-const NAV_ITEMS = [
-  { href: "/interviews/new", label: "Create Interview" },
-  { href: "/progress", label: "Progress" },
-];
+import { usePathname } from "next/navigation";
 
 export function AppShell({
   children,
@@ -31,45 +24,7 @@ export function AppShell({
         Skip to content
       </a>
 
-      {isImmersive ? (
-        <header className="border-b border-[var(--border-glass)] bg-black/20 backdrop-blur-md">
-          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-            <Link href="/interviews/new" className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] hover:text-teal-300">
-              ← Exit
-            </Link>
-            {immersiveActions ? (
-              <div className="flex flex-wrap items-center gap-2">{immersiveActions}</div>
-            ) : null}
-          </div>
-        </header>
-      ) : (
-        <header className="sticky top-0 z-40 border-b border-[var(--border-glass)] bg-[var(--bg-deep)]/80 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <Logo />
-            <nav aria-label="Primary" className="flex flex-wrap gap-1">
-              {NAV_ITEMS.map((item) => {
-                const active =
-                  pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-teal-500/20 text-teal-300 ring-1 ring-teal-500/30"
-                        : "text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]",
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </header>
-      )}
+      <SiteNav variant={isImmersive ? "immersive" : "app"} immersiveActions={immersiveActions} />
 
       <main
         id="main-content"

@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.core.exceptions import NotFoundError
 from app.db.enums import InterviewSessionStatus, InterviewType
 from app.db.models.context import JobDescription, Resume
@@ -26,8 +27,22 @@ class InterviewRepository:
 
     async def ensure_user_exists(self, user_id: uuid.UUID) -> None:
         user = await self._session.get(User, user_id)
-        if user is None:
-            raise NotFoundError("User not found")
+        if user is not None:
+            return
+        if settings.is_development:
+            await self._create_dev_user_with_id(user_id)
+            return
+        raise NotFoundError("User not found")
+
+    async def _create_dev_user_with_id(self, user_id: uuid.UUID) -> User:
+        user = User(
+            id=user_id,
+            email=f"dev+{user_id}@local.voxforge",
+            password_hash="dev",
+        )
+        self._session.add(user)
+        await self._session.flush()
+        return user
 
     async def create_user(self, email: str, password_hash: str = "dev") -> User:
         user = User(email=email, password_hash=password_hash)

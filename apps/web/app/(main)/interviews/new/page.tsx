@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { InterviewFunnelStepper } from "@/components/interview/InterviewFunnelStepper";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label } from "@/components/ui/FormControls";
@@ -13,6 +14,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { useAppContext } from "@/context/AppProvider";
 import { ApiClientError } from "@/lib/api-client";
 import { createSession } from "@/lib/interview-api";
+import { routes } from "@/lib/routes";
 
 const FLOW_STEPS = [
   { step: "1", title: "Configure", detail: "Choose interview type, difficulty, and context." },
@@ -57,6 +59,16 @@ export default function CreateInterviewPage() {
       <PageHeader
         title="Create interview"
         description="Start a new practice session. You will configure interview type and context next."
+        actions={
+          <>
+            <ButtonLink href={routes.previewResults} variant="secondary">
+              Sample evaluation
+            </ButtonLink>
+            <ButtonLink href={routes.progress} variant="secondary">
+              View progress
+            </ButtonLink>
+          </>
+        }
       />
 
       <GlassPanel className="mb-6 border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-cyan-500/5 p-6">
@@ -74,7 +86,10 @@ export default function CreateInterviewPage() {
 
       <Card className="mx-auto max-w-xl">
         <CardHeading>Session details</CardHeading>
-        <CardDescription>Optional title to help you identify this session later.</CardDescription>
+        <CardDescription>
+          Optional label for this practice session (for your reference). You will set your target
+          role, interview type, and difficulty on the next setup step.
+        </CardDescription>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <Label htmlFor="title">Title</Label>
@@ -83,7 +98,7 @@ export default function CreateInterviewPage() {
               name="title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="Senior Backend Engineer — Technical Round"
+              placeholder="Senior Backend Engineer — Technical Round (optional)"
               maxLength={200}
             />
           </div>

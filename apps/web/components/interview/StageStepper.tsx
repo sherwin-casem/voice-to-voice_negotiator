@@ -49,21 +49,21 @@ export function StageStepper({
   return (
     <nav
       aria-label="Interview progress"
-      className={cn("flex flex-wrap items-center gap-1 sm:gap-2", className)}
+      className={cn("flex flex-wrap items-center gap-2 sm:gap-3", className)}
     >
       {STAGES.map((stage, index) => {
         const isActive = stage.id === active;
         const isPast = index < activeIndex;
         return (
-          <span key={stage.id} className="flex items-center gap-1 sm:gap-2">
+          <span key={stage.id} className="flex items-center gap-2 sm:gap-3">
             {index > 0 ? (
-              <span className="text-[var(--text-dim)]" aria-hidden="true">
+              <span className="text-sm text-[var(--text-muted)]" aria-hidden="true">
                 →
               </span>
             ) : null}
             <span
               className={cn(
-                "rounded-full px-2.5 py-1 text-xs font-medium transition-colors sm:px-3",
+                "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors sm:px-4",
                 isActive
                   ? "bg-teal-500/20 text-teal-300 ring-1 ring-teal-500/40"
                   : isPast

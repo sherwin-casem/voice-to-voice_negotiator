@@ -12,7 +12,7 @@ type LogoProps = {
 
 export function Logo({
   className,
-  href = "/interviews/new",
+  href = "/",
   showTagline = true,
   size = "md",
 }: LogoProps) {

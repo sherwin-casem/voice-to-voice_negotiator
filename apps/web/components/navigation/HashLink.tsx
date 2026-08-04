@@ -1,19 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { cn } from "@/lib/format";
+import { navigateToHomeSection } from "@/lib/home-navigation";
 import { routes, type HomeSection } from "@/lib/routes";
-
-function scrollToSection(section: HomeSection) {
-  const target = document.getElementById(section);
-  if (!target) {
-    return;
-  }
-  target.scrollIntoView({ behavior: "smooth", block: "start" });
-  window.history.replaceState(null, "", routes.homeSection(section));
-}
 
 export function HashLink({
   section,
@@ -29,17 +21,16 @@ export function HashLink({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <Link
       href={href}
       className={className}
       onClick={(event) => {
-        if (pathname === routes.home) {
-          event.preventDefault();
-          scrollToSection(section);
-          onNavigate?.();
-        }
+        event.preventDefault();
+        navigateToHomeSection(section, router, pathname);
+        onNavigate?.();
       }}
     >
       {children}

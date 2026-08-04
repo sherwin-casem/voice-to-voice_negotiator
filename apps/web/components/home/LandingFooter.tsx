@@ -56,13 +56,13 @@ export function LandingFooter() {
                 </Link>
               </li>
               <li>
-                <Link href={routes.createInterview} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
-                  Configure &amp; go live
+                <Link href={routes.previewResults} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
+                  View sample evaluation
                 </Link>
               </li>
               <li>
-                <Link href={routes.previewResults} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
-                  Evaluation report
+                <Link href={routes.progress} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
+                  Track progress
                 </Link>
               </li>
             </ul>

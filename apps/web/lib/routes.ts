@@ -20,19 +20,19 @@ export const PRODUCT_FLOW = [
   {
     step: "1",
     title: "Create",
-    detail: "Name your session and begin setup.",
+    detail: "Name your session to begin the interview workflow.",
     href: routes.createInterview,
   },
   {
     step: "2",
     title: "Configure",
-    detail: "Pick interview type, difficulty, and context.",
+    detail: "Create a session first, then pick interview type, difficulty, and context.",
     href: routes.createInterview,
   },
   {
     step: "3",
     title: "Practice live",
-    detail: "Voice interview with a dynamic AI interviewer.",
+    detail: "After setup, join a voice interview with a dynamic AI interviewer.",
     href: routes.createInterview,
   },
   {

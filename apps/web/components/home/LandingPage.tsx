@@ -1,13 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 import { FeatureSections, ProductFlowSection } from "@/components/home/FeatureSections";
 import { LandingFooter } from "@/components/home/LandingFooter";
 import { LandingHero } from "@/components/home/LandingHero";
 import { SiteNav } from "@/components/navigation/SiteNav";
-import { routes, type HomeSection } from "@/lib/routes";
+import { scrollToHashFromLocation } from "@/lib/home-navigation";
+import { routes } from "@/lib/routes";
 
 const AudioFountainScene = dynamic(
   () =>
@@ -15,22 +17,20 @@ const AudioFountainScene = dynamic(
   { ssr: false },
 );
 
-function scrollToHashSection() {
-  const hash = window.location.hash.replace("#", "") as HomeSection;
-  if (!hash) {
-    return;
-  }
-  window.requestAnimationFrame(() => {
-    document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-}
-
 export function LandingPage() {
+  const pathname = usePathname();
+
   useEffect(() => {
-    scrollToHashSection();
-    window.addEventListener("hashchange", scrollToHashSection);
-    return () => window.removeEventListener("hashchange", scrollToHashSection);
-  }, []);
+    if (pathname !== routes.home) {
+      return;
+    }
+
+    scrollToHashFromLocation();
+
+    const handleHashChange = () => scrollToHashFromLocation();
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [pathname]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden text-[var(--text-primary)]">

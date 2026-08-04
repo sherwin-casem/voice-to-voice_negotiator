@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
@@ -21,7 +20,6 @@ export function SiteNav({
   variant?: "floating" | "app" | "immersive";
   immersiveActions?: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -74,13 +72,6 @@ export function SiteNav({
         </nav>
 
         <div className="flex items-center gap-2">
-          <ButtonLink
-            href={routes.createInterview}
-            variant="secondary"
-            className="hidden px-4 py-1.5 sm:inline-flex"
-          >
-            Log in
-          </ButtonLink>
           <ButtonLink href={routes.createInterview} className="px-4 py-1.5 text-sm">
             Start practicing
           </ButtonLink>
@@ -126,10 +117,7 @@ export function SiteNav({
               </NavLink>
             ))}
           </nav>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <ButtonLink href={routes.createInterview} variant="secondary" className="w-full justify-center py-2">
-              Log in
-            </ButtonLink>
+          <div className="mt-4">
             <ButtonLink href={routes.createInterview} className="w-full justify-center py-2">
               Start practicing
             </ButtonLink>

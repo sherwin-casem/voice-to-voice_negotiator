@@ -143,6 +143,22 @@ export const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {
   hr: "HR",
 };
 
+/** Persona shown in the live interview UI and used by the interviewer agent. */
+export const INTERVIEWER_ROLE_LABELS: Record<InterviewType, string> = {
+  behavioral: "Hiring Manager",
+  technical: "Engineering Manager",
+  system_design: "CTO",
+  leadership: "CEO",
+  hr: "HR Partner",
+};
+
+export function getInterviewerRole(interviewType: InterviewType | undefined): string {
+  if (!interviewType) {
+    return "Interviewer";
+  }
+  return INTERVIEWER_ROLE_LABELS[interviewType];
+}
+
 export const SESSION_STATUS_LABELS: Record<InterviewSessionStatus, string> = {
   created: "Created",
   configured: "Configured",

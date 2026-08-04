@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/lib/format";
 
-const BAR_COUNT = 24;
+const BAR_COUNT = 20;
 
 export function WaveformVisualizer({
   level,
@@ -46,14 +46,14 @@ export function WaveformVisualizer({
 
   return (
     <div
-      className={cn("flex h-8 items-end gap-0.5", className)}
+      className={cn("flex h-10 items-end justify-end gap-0.5 sm:h-11", className)}
       role="img"
       aria-label={isActive ? "Audio activity waveform" : "Audio inactive"}
     >
       {heights.map((height, index) => (
         <div
           key={index}
-          className="w-1 rounded-sm bg-gradient-to-t from-teal-600 to-cyan-400 transition-all duration-75"
+          className="w-0.5 rounded-sm bg-gradient-to-t from-teal-600 to-cyan-400 transition-all duration-75 sm:w-1"
           style={{ height: `${height * 100}%` }}
         />
       ))}

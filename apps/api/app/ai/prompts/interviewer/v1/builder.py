@@ -32,6 +32,14 @@ _TYPE_LABELS: dict[InterviewType, str] = {
     InterviewType.HR: "HR",
 }
 
+_INTERVIEWER_ROLES: dict[InterviewType, str] = {
+    InterviewType.BEHAVIORAL: "Hiring Manager",
+    InterviewType.TECHNICAL: "Engineering Manager",
+    InterviewType.SYSTEM_DESIGN: "CTO",
+    InterviewType.LEADERSHIP: "CEO",
+    InterviewType.HR: "HR Partner",
+}
+
 
 def _load_template(name: str) -> str:
     return (_TEMPLATES_DIR / name).read_text(encoding="utf-8")
@@ -67,6 +75,7 @@ def build_interviewer_messages(context: InterviewerContext) -> list[dict[str, st
     )
 
     system_content = system_template.format(
+        interviewer_role=_INTERVIEWER_ROLES[context.interview_type],
         interview_type_label=_TYPE_LABELS[context.interview_type],
         interview_type=context.interview_type.value,
         difficulty=context.difficulty,

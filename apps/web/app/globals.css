@@ -94,3 +94,13 @@ body {
     background: linear-gradient(90deg, #16a34a, var(--accent-teal));
   }
 }
+
+@keyframes portal-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}

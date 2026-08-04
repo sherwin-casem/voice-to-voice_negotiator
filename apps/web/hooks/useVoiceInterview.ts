@@ -338,6 +338,7 @@ export function useVoiceInterview(
 
     setIsInterviewStarted(true);
     isInterviewStartedRef.current = true;
+    optionsRef.current.onSessionStatusChange?.("active", questionCountRef.current);
     appendSystemMessage("Interview started.");
   }, [appendSystemMessage, sessionId]);
 

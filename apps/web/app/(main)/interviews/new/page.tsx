@@ -29,9 +29,17 @@ export default function CreateInterviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const trimmedTitle = title.trim();
+  const isTitleValid = trimmedTitle.length > 0;
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!userId) {
+      return;
+    }
+
+    if (!isTitleValid) {
+      setError("Title is required.");
       return;
     }
 
@@ -40,7 +48,7 @@ export default function CreateInterviewPage() {
 
     try {
       const session = await createSession(userId, {
-        title: title.trim() || null,
+        title: trimmedTitle,
       });
       router.push(`/interviews/${session.id}/setup`);
     } catch (caught) {
@@ -87,24 +95,36 @@ export default function CreateInterviewPage() {
       <Card className="mx-auto max-w-xl">
         <CardHeading>Session details</CardHeading>
         <CardDescription>
-          Optional label for this practice session (for your reference). You will set your target
+          Give this practice session a title so you can find it later. You will set your target
           role, interview type, and difficulty on the next setup step.
         </CardDescription>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">
+              Title <span className="text-red-400">*</span>
+            </Label>
             <Input
               id="title"
               name="title"
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Senior Backend Engineer — Technical Round (optional)"
+              onChange={(event) => {
+                setTitle(event.target.value);
+                if (error === "Title is required.") {
+                  setError(null);
+                }
+              }}
+              placeholder="Senior Backend Engineer — Technical Round"
               maxLength={200}
+              required
+              aria-required="true"
             />
           </div>
           <FieldError message={error} />
           <div className="flex items-center gap-3">
-            <Button type="submit" disabled={!isUserReady || !userId || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={!isUserReady || !userId || !isTitleValid || isSubmitting}
+            >
               Continue to setup
             </Button>
             {isSubmitting ? <Spinner label="Creating session" /> : null}

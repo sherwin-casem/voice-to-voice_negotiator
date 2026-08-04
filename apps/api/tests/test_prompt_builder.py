@@ -31,6 +31,7 @@ def test_build_interviewer_messages_includes_context() -> None:
     assert len(messages) == 2
     assert messages[0]["role"] == "system"
     assert "technical" in messages[0]["content"].lower()
+    assert "Engineering Manager" in messages[0]["content"]
     assert "Backend Engineer" in messages[0]["content"]
     assert "caching" in messages[0]["content"]
     assert "Redis" in messages[1]["content"]

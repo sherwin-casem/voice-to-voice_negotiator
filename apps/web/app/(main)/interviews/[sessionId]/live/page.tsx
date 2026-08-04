@@ -1,6 +1,7 @@
 "use client";
 
 import type { InterviewSessionStatus, SessionResponse } from "@voice/shared";
+import { getInterviewerRole, INTERVIEW_TYPE_LABELS } from "@voice/shared";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -11,7 +12,6 @@ import { InterviewFunnelStepper } from "@/components/interview/InterviewFunnelSt
 import { InterviewerAvatar } from "@/components/interview/InterviewerAvatar";
 import { LiveTranscript } from "@/components/interview/LiveTranscript";
 import { MicControls } from "@/components/interview/MicControls";
-import { StageStepper } from "@/components/interview/StageStepper";
 import { PracticeModeBadge } from "@/components/ui/Badge";
 import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -136,12 +136,24 @@ export default function LiveInterviewPage() {
         status: loaded.status,
         question_count: loaded.question_count,
       });
+      return loaded.status;
     } catch (caught) {
       setRefreshError(
         caught instanceof ApiClientError ? caught.message : "Unable to refresh session.",
       );
+      return null;
     }
   }, [applySessionPatch, sessionId, userId]);
+
+  const refreshSessionUntilActive = useCallback(async () => {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const status = await refreshSession();
+      if (status === "active" || status === "completing") {
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 250));
+    }
+  }, [refreshSession]);
 
   const voice = useVoiceInterview(sessionId, userId, {
     onSessionStatusChange: (status, questionCount) => {
@@ -158,7 +170,18 @@ export default function LiveInterviewPage() {
     },
   });
 
-  const elapsedSeconds = useInterviewTimer(session?.status === "active");
+  const isSessionTerminal =
+    session?.status === "completed" ||
+    session?.status === "abandoned" ||
+    session?.status === "evaluation_failed";
+
+  const isTimerRunning =
+    !isSessionTerminal &&
+    (voice.isInterviewStarted ||
+      session?.status === "active" ||
+      session?.status === "completing");
+
+  const elapsedSeconds = useInterviewTimer(isTimerRunning);
   const targetMinutes =
     session?.config && typeof session.config.target_duration_minutes === "number"
       ? session.config.target_duration_minutes
@@ -167,6 +190,11 @@ export default function LiveInterviewPage() {
   const notes = useMemo(() => {
     const items: string[] = [];
     const config = session?.config;
+    if (session?.interview_type) {
+      items.push(
+        `Interviewer: ${getInterviewerRole(session.interview_type)} (${INTERVIEW_TYPE_LABELS[session.interview_type]})`,
+      );
+    }
     if (config?.target_role) {
       items.push(`Target role: ${config.target_role}`);
     }
@@ -182,7 +210,7 @@ export default function LiveInterviewPage() {
       items.push("Speak clearly and pause before follow-ups.");
     }
     return items;
-  }, [session?.config]);
+  }, [session?.config, session?.interview_type]);
 
   useEffect(() => {
     if (userId && sessionId) {
@@ -195,7 +223,8 @@ export default function LiveInterviewPage() {
     setRefreshError(null);
     try {
       await voice.startInterview();
-      await refreshSession();
+      applySessionPatch({ status: "active" });
+      void refreshSessionUntilActive();
     } catch (caught) {
       setRefreshError(
         caught instanceof Error ? caught.message : "Unable to start voice interview.",
@@ -240,11 +269,6 @@ export default function LiveInterviewPage() {
     voice.connectionState === "connected" &&
     (voice.isAwaitingAnswer || voice.interviewerState === "listening");
 
-  const isEnded =
-    session?.status === "completed" ||
-    session?.status === "abandoned" ||
-    session?.status === "evaluation_failed";
-
   if (isLoading) {
     return <Spinner label="Loading live interview" />;
   }
@@ -259,8 +283,6 @@ export default function LiveInterviewPage() {
 
   return (
     <div className="space-y-3 pb-24 lg:pb-4">
-      <InterviewFunnelStepper current="live" sessionId={sessionId} className="mb-2" />
-
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
           <h1 className="text-xl font-bold tracking-widest text-[var(--text-primary)] sm:text-2xl">
@@ -268,10 +290,9 @@ export default function LiveInterviewPage() {
           </h1>
           <ConnectionStatus state={voice.connectionState} />
         </div>
-        <StageStepper
-          interviewType={session?.interview_type}
-          isStarted={voice.isInterviewStarted}
-          isEnded={isEnded}
+        <InterviewFunnelStepper
+          current="live"
+          sessionId={sessionId}
           className="order-3 lg:order-none"
         />
         <div className="hidden flex-wrap items-center gap-2 lg:flex lg:justify-end">
@@ -330,6 +351,7 @@ export default function LiveInterviewPage() {
             audioLevel={voice.audioLevel}
             isRecording={voice.isRecording}
             questionSequence={voice.currentQuestionSequence}
+            interviewType={session?.interview_type}
           />
           <CurrentQuestion
             question={voice.currentQuestion}

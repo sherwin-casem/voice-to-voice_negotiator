@@ -275,7 +275,7 @@ export function AudioFountainScene() {
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1628]/30 via-transparent to-[#0a1628]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_70%_45%,rgba(20,184,166,0.14),transparent_65%)]" />
       <Canvas
-        className="!absolute inset-0 h-full w-full"
+        className="pointer-events-none !absolute inset-0 h-full w-full"
         camera={{ position: [0, 0.5, 9], fov: 42 }}
         dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}

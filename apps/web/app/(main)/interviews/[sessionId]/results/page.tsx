@@ -22,6 +22,7 @@ import { useAppContext } from "@/context/AppProvider";
 import { useSession } from "@/hooks/useSession";
 import { formatDate } from "@/lib/format";
 import { buildPreviewEvaluation } from "@/lib/mocks/evaluation";
+import { routes } from "@/lib/routes";
 
 function ResultsContent() {
   const params = useParams<{ sessionId: string }>();
@@ -53,10 +54,13 @@ function ResultsContent() {
         description="Multi-agent evaluation, scoring, and coaching recommendations."
         actions={
           <>
-            <ButtonLink href="/progress" variant="secondary">
+            <ButtonLink href={routes.home} variant="secondary">
+              Home
+            </ButtonLink>
+            <ButtonLink href={routes.progress} variant="secondary">
               View progress
             </ButtonLink>
-            <ButtonLink href="/interviews/new">New interview</ButtonLink>
+            <ButtonLink href={routes.createInterview}>New interview</ButtonLink>
           </>
         }
       />

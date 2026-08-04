@@ -1,4 +1,9 @@
+import Link from "next/link";
+
+import { HashLink } from "@/components/navigation/HashLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
+import { cn } from "@/lib/format";
+import { routes } from "@/lib/routes";
 
 export function LandingHero() {
   return (
@@ -27,26 +32,46 @@ export function LandingHero() {
         </p>
 
         <div className="mt-9 flex flex-wrap items-center gap-3">
-          <ButtonLink href="/interviews/new" className="px-6 py-2.5 text-sm">
+          <ButtonLink href={routes.createInterview} className="px-6 py-2.5 text-sm">
             Start practicing →
           </ButtonLink>
-          <ButtonLink href="#features" variant="secondary" className="px-6 py-2.5 text-sm">
+          <HashLink
+            section="flow"
+            href={routes.homeSection("flow")}
+            className={cn(
+              "inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-medium transition-all",
+              "border border-[var(--border-glass-strong)] bg-[var(--bg-panel)] text-[var(--text-primary)] hover:bg-[var(--bg-panel-hover)]",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500",
+            )}
+          >
             See how it works
-          </ButtonLink>
+          </HashLink>
         </div>
 
         <dl className="mt-14 grid max-w-lg grid-cols-3 gap-4 border-t border-[var(--border-glass)] pt-8">
           <div>
             <dt className="text-section-label">Interview types</dt>
-            <dd className="mt-1 text-2xl font-semibold text-teal-300">5+</dd>
+            <dd className="mt-1">
+              <Link href={routes.createInterview} className="text-2xl font-semibold text-teal-300 hover:text-teal-200">
+                5+
+              </Link>
+            </dd>
           </div>
           <div>
             <dt className="text-section-label">Eval dimensions</dt>
-            <dd className="mt-1 text-2xl font-semibold text-teal-300">7</dd>
+            <dd className="mt-1">
+              <Link href={routes.previewResults} className="text-2xl font-semibold text-teal-300 hover:text-teal-200">
+                7
+              </Link>
+            </dd>
           </div>
           <div>
             <dt className="text-section-label">Voice-first</dt>
-            <dd className="mt-1 text-2xl font-semibold text-teal-300">100%</dd>
+            <dd className="mt-1">
+              <Link href={routes.createInterview} className="text-2xl font-semibold text-teal-300 hover:text-teal-200">
+                100%
+              </Link>
+            </dd>
           </div>
         </dl>
       </div>

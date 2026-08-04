@@ -11,6 +11,7 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 import { MetricBar } from "@/components/ui/MetricBar";
 import { formatDate } from "@/lib/format";
 import { MOCK_HISTORY_SESSIONS, MOCK_PROGRESS_TRENDS } from "@/lib/mocks/history";
+import { routes } from "@/lib/routes";
 
 const SHOW_PREVIEW_DATA = MOCK_HISTORY_SESSIONS.length > 0 || MOCK_PROGRESS_TRENDS.length > 0;
 
@@ -23,6 +24,14 @@ export default function ProgressPage() {
       <PageHeader
         title="Progress and history"
         description="Track dimension trends and review past practice sessions."
+        actions={
+          <>
+            <ButtonLink href={routes.home} variant="secondary">
+              Home
+            </ButtonLink>
+            <ButtonLink href={routes.createInterview}>New interview</ButtonLink>
+          </>
+        }
       />
 
       {!SHOW_PREVIEW_DATA ? (
@@ -33,7 +42,7 @@ export default function ProgressPage() {
             session history.
           </p>
           <div className="mt-6">
-            <ButtonLink href="/interviews/new">Start your first interview</ButtonLink>
+            <ButtonLink href={routes.createInterview}>Start your first interview</ButtonLink>
           </div>
         </GlassPanel>
       ) : null}
@@ -120,7 +129,7 @@ export default function ProgressPage() {
           <CardDescription>Your completed interviews will appear here.</CardDescription>
           <p className="mt-4 text-sm text-[var(--text-muted)]">
             No sessions recorded yet.{" "}
-            <Link href="/interviews/new" className="text-teal-400 hover:text-teal-300">
+            <Link href={routes.createInterview} className="text-teal-400 hover:text-teal-300">
               Create an interview
             </Link>{" "}
             to get started.

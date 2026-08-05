@@ -33,6 +33,12 @@ export type InterviewSessionStatus =
 
 export type DifficultyLevel = "junior" | "mid" | "senior";
 
+export const DIFFICULTY_LEVEL_LABELS: Record<DifficultyLevel, string> = {
+  junior: "Junior",
+  mid: "Mid-level",
+  senior: "Senior",
+};
+
 export interface SessionResponse {
   id: string;
   user_id: string;

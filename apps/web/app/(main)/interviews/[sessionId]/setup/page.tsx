@@ -1,7 +1,7 @@
 "use client";
 
 import type { ConfigureSessionRequest, DifficultyLevel, InterviewType } from "@voice/shared";
-import { INTERVIEW_TYPE_LABELS } from "@voice/shared";
+import { DIFFICULTY_LEVEL_LABELS, INTERVIEW_TYPE_LABELS } from "@voice/shared";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
-import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/FormControls";
+import { FieldError, FieldHint, Input, Label, Select, Textarea } from "@/components/ui/FormControls";
 import { useAppContext } from "@/context/AppProvider";
 import { useSession } from "@/hooks/useSession";
 import { ApiClientError } from "@/lib/api-client";
@@ -22,6 +22,7 @@ import {
 } from "@/lib/interview-api";
 
 const INTERVIEW_TYPES = Object.keys(INTERVIEW_TYPE_LABELS) as InterviewType[];
+const DIFFICULTY_LEVELS = Object.keys(DIFFICULTY_LEVEL_LABELS) as DifficultyLevel[];
 
 export default function InterviewSetupPage() {
   const params = useParams<{ sessionId: string }>();
@@ -30,8 +31,8 @@ export default function InterviewSetupPage() {
   const { userId } = useAppContext();
   const { session, error: sessionError, isLoading: loadingSession } = useSession(userId, sessionId);
 
-  const [interviewType, setInterviewType] = useState<InterviewType>("behavioral");
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>("mid");
+  const [interviewType, setInterviewType] = useState<InterviewType | "">("");
+  const [difficulty, setDifficulty] = useState<DifficultyLevel | "">("");
   const [targetRole, setTargetRole] = useState("");
   const effectiveTargetRole = targetRole || session?.title || "";
   const [companyContext, setCompanyContext] = useState("");
@@ -39,11 +40,35 @@ export default function InterviewSetupPage() {
   const [resumeText, setResumeText] = useState("");
   const [jobDescriptionText, setJobDescriptionText] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    interviewType?: string;
+    difficulty?: string;
+  }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isConfigurationValid = interviewType !== "" && difficulty !== "";
+
+  function validateConfiguration() {
+    const nextErrors: { interviewType?: string; difficulty?: string } = {};
+
+    if (!interviewType) {
+      nextErrors.interviewType = "Interview type is required.";
+    }
+    if (!difficulty) {
+      nextErrors.difficulty = "Difficulty is required.";
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!userId) {
+      return;
+    }
+
+    if (!validateConfiguration()) {
       return;
     }
 
@@ -71,8 +96,8 @@ export default function InterviewSetupPage() {
       }
 
       const body: ConfigureSessionRequest = {
-        interview_type: interviewType,
-        difficulty,
+        interview_type: interviewType as InterviewType,
+        difficulty: difficulty as DifficultyLevel,
         target_role: effectiveTargetRole.trim() || null,
         company_context: companyContext.trim() || null,
         max_questions: Number(maxQuestions) || null,
@@ -123,30 +148,64 @@ export default function InterviewSetupPage() {
           <CardDescription>These settings drive the AI interviewer behavior.</CardDescription>
           <div className="mt-4 space-y-4">
             <div>
-              <Label htmlFor="interview-type">Interview type</Label>
+              <Label htmlFor="interview-type" required>
+                Interview type
+              </Label>
               <Select
                 id="interview-type"
+                name="interview_type"
                 value={interviewType}
-                onChange={(event) => setInterviewType(event.target.value as InterviewType)}
+                required
+                aria-required="true"
+                aria-invalid={fieldErrors.interviewType ? true : undefined}
+                onChange={(event) => {
+                  setInterviewType(event.target.value as InterviewType | "");
+                  if (fieldErrors.interviewType) {
+                    setFieldErrors((previous) => ({ ...previous, interviewType: undefined }));
+                  }
+                }}
               >
+                <option value="" disabled>
+                  Select interview type
+                </option>
                 {INTERVIEW_TYPES.map((type) => (
                   <option key={type} value={type}>
                     {INTERVIEW_TYPE_LABELS[type]}
                   </option>
                 ))}
               </Select>
+              <FieldHint>Behavioral, technical, system design, leadership, or HR.</FieldHint>
+              <FieldError message={fieldErrors.interviewType} />
             </div>
             <div>
-              <Label htmlFor="difficulty">Difficulty</Label>
+              <Label htmlFor="difficulty" required>
+                Difficulty
+              </Label>
               <Select
                 id="difficulty"
+                name="difficulty"
                 value={difficulty}
-                onChange={(event) => setDifficulty(event.target.value as DifficultyLevel)}
+                required
+                aria-required="true"
+                aria-invalid={fieldErrors.difficulty ? true : undefined}
+                onChange={(event) => {
+                  setDifficulty(event.target.value as DifficultyLevel | "");
+                  if (fieldErrors.difficulty) {
+                    setFieldErrors((previous) => ({ ...previous, difficulty: undefined }));
+                  }
+                }}
               >
-                <option value="junior">Junior</option>
-                <option value="mid">Mid</option>
-                <option value="senior">Senior</option>
+                <option value="" disabled>
+                  Select difficulty
+                </option>
+                {DIFFICULTY_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {DIFFICULTY_LEVEL_LABELS[level]}
+                  </option>
+                ))}
               </Select>
+              <FieldHint>Calibrates question depth and interviewer expectations.</FieldHint>
+              <FieldError message={fieldErrors.difficulty} />
             </div>
             <div>
               <Label htmlFor="target-role">Target role</Label>
@@ -211,7 +270,7 @@ export default function InterviewSetupPage() {
         <div className="lg:col-span-2">
           <FieldError message={submitError} />
           <div className="mt-2 flex items-center gap-3">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isConfigurationValid}>
               Save and start live interview
             </Button>
             {isSubmitting ? <Spinner label="Saving configuration" /> : null}

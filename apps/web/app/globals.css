@@ -95,6 +95,11 @@ body {
   }
 }
 
+select option {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+}
+
 @keyframes portal-pulse {
   0%,
   100% {

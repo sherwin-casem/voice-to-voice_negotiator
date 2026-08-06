@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
+from sqlalchemy import inspect as sa_inspect
 
 from app.config import settings
 from app.core.exceptions import UnauthorizedError
@@ -14,7 +15,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 def _user_response(user: User) -> UserResponse:
-    display_name = user.profile.display_name if user.profile else None
+    display_name = None
+    if "profile" not in sa_inspect(user).unloaded:
+        profile = user.profile
+        display_name = profile.display_name if profile else None
     return UserResponse(id=str(user.id), email=user.email, display_name=display_name)
 
 

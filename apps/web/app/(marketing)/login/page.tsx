@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label } from "@/components/ui/FormControls";
 import { useAppContext } from "@/context/AppProvider";
-import { routes } from "@/lib/routes";
+import { registerWithNext, routes } from "@/lib/routes";
 
 function LoginForm() {
   const router = useRouter();
@@ -83,7 +83,7 @@ function LoginForm() {
       </form>
       <p className="mt-4 text-center text-sm text-[var(--text-muted)]">
         Don&apos;t have an account?{" "}
-        <Link href={routes.register} className="text-teal-400 hover:text-teal-300">
+        <Link href={registerWithNext(nextPath)} className="text-teal-400 hover:text-teal-300">
           Sign up
         </Link>
       </p>

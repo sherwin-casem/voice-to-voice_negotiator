@@ -14,7 +14,10 @@ const PUBLIC_PATHS = new Set([
   "/register",
 ]);
 
-function isProtectedPath(pathname: string): boolean {
+function isProtectedPath(pathname: string, searchParams: URLSearchParams): boolean {
+  if (pathname.startsWith("/interviews/") && searchParams.get("preview") === "1") {
+    return false;
+  }
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
@@ -27,7 +30,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!isProtectedPath(pathname)) {
+  if (!isProtectedPath(pathname, request.nextUrl.searchParams)) {
     return NextResponse.next();
   }
 
@@ -36,10 +39,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const loginUrl = request.nextUrl.clone();
-  loginUrl.pathname = "/login";
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
+  const signupUrl = request.nextUrl.clone();
+  signupUrl.pathname = "/register";
+  signupUrl.searchParams.set("next", pathname);
+  return NextResponse.redirect(signupUrl);
 }
 
 export const config = {

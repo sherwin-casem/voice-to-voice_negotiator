@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Spinner } from "@/components/ui/Alert";
 import { useAppContext } from "@/context/AppProvider";
-import { routes } from "@/lib/routes";
+import { registerWithNext } from "@/lib/routes";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -13,16 +13,19 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const { isAuthReady, isAuthenticated } = useAppContext();
 
+  const isPreviewResults =
+    pathname.includes("/results") && searchParams.get("preview") === "1";
+
   useEffect(() => {
-    if (!isAuthReady) {
+    if (!isAuthReady || isPreviewResults) {
       return;
     }
     if (!isAuthenticated) {
       const query = searchParams.toString();
       const returnPath = query ? `${pathname}?${query}` : pathname;
-      router.replace(`${routes.login}?next=${encodeURIComponent(returnPath)}`);
+      router.replace(registerWithNext(returnPath));
     }
-  }, [isAuthReady, isAuthenticated, pathname, router, searchParams]);
+  }, [isAuthReady, isAuthenticated, isPreviewResults, pathname, router, searchParams]);
 
   if (!isAuthReady) {
     return (
@@ -32,10 +35,10 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isPreviewResults) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Spinner label="Redirecting to login" />
+        <Spinner label="Redirecting to sign up" />
       </div>
     );
   }

@@ -63,7 +63,9 @@ class AuthRepository:
         self._session = session
 
     async def get_user_by_email(self, email: str) -> User | None:
-        result = await self._session.execute(select(User).where(User.email == email.lower()))
+        result = await self._session.execute(
+            select(User).where(User.email == email.lower()).options(selectinload(User.profile))
+        )
         return result.scalar_one_or_none()
 
     async def get_user_by_id(self, user_id: UUID) -> User | None:
@@ -79,6 +81,7 @@ class AuthRepository:
         profile = UserProfile(user_id=user.id)
         self._session.add(profile)
         await self._session.flush()
+        user.profile = profile
         return user
 
     async def store_refresh_token(self, user_id: UUID, token: str) -> RefreshToken:
@@ -119,6 +122,12 @@ class AuthService:
     def __init__(self, repository: AuthRepository) -> None:
         self._repository = repository
 
+    async def _user_for_response(self, user_id: UUID) -> User:
+        user = await self._repository.get_user_by_id(user_id)
+        if user is None:
+            raise UnauthorizedError("User not found")
+        return user
+
     async def register(self, email: str, password: str) -> tuple[User, str, str]:
         existing = await self._repository.get_user_by_email(email)
         if existing is not None:
@@ -129,7 +138,7 @@ class AuthService:
         refresh_token = generate_refresh_token()
         await self._repository.store_refresh_token(user.id, refresh_token)
         await self._repository.update_last_login(user)
-        return user, access_token, refresh_token
+        return await self._user_for_response(user.id), access_token, refresh_token
 
     async def login(self, email: str, password: str) -> tuple[User, str, str]:
         user = await self._repository.get_user_by_email(email)
@@ -142,7 +151,7 @@ class AuthService:
         refresh_token = generate_refresh_token()
         await self._repository.store_refresh_token(user.id, refresh_token)
         await self._repository.update_last_login(user)
-        return user, access_token, refresh_token
+        return await self._user_for_response(user.id), access_token, refresh_token
 
     async def refresh(self, refresh_token: str) -> tuple[User, str, str]:
         record = await self._repository.get_refresh_token(refresh_token)

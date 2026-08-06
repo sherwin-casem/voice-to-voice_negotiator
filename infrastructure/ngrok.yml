@@ -1,0 +1,7 @@
+version: "2"
+tunnels:
+  web:
+    addr: 3000
+    proto: http
+    # API is proxied via Next.js rewrites (see apps/web/next.config.ts).
+    # Voice WebSocket needs a second tunnel on a paid ngrok plan, or local demo only.

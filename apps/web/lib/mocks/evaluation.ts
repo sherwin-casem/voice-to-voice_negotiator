@@ -36,9 +36,14 @@ export interface EvaluationPreview {
   }>;
 }
 
-export function buildPreviewEvaluation(sessionTitle: string): EvaluationPreview {
+export function buildPreviewEvaluation(
+  sessionTitle: string,
+  options?: { overallScore?: number | null },
+): EvaluationPreview {
+  const overallScore = options?.overallScore ?? 76;
+
   return {
-    overall_score: 76,
+    overall_score: overallScore,
     dimension_scores: {
       communication: 78,
       technical: 74,

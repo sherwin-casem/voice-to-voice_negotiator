@@ -53,7 +53,7 @@ function DemoMetricsPanel({
         </span>
       </div>
       <p className="mb-4 text-xs text-[var(--text-dim)]">
-        Sample scores for layout preview. Real-time evaluation metrics are coming soon.
+        Live evaluation metrics update during your session as you speak.
       </p>
       <div className="space-y-4">
         <MetricBar

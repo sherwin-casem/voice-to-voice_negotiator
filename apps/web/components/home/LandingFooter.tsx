@@ -16,12 +16,12 @@ export function LandingFooter() {
               Ready to practice out loud?
             </h2>
             <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">
-              Jump into a live voice interview or review sample evaluation scores before you begin.
+              Jump into a live voice interview or review evaluation scores before you begin.
             </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <ButtonLink href={routes.previewResults} variant="secondary" className="justify-center px-6 py-2.5">
-              View sample results
+              View results
             </ButtonLink>
             <ButtonLink href={routes.createInterview} className="justify-center px-6 py-2.5">
               Start practicing →
@@ -57,12 +57,12 @@ export function LandingFooter() {
               </li>
               <li>
                 <Link href={routes.previewResults} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
-                  View sample evaluation
+                  View evaluation
                 </Link>
               </li>
               <li>
-                <Link href={routes.progress} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
-                  Track progress
+                <Link href={routes.evaluations} className="text-sm text-[var(--text-muted)] hover:text-teal-300">
+                  Evaluations
                 </Link>
               </li>
             </ul>

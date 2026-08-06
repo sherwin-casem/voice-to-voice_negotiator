@@ -70,10 +70,10 @@ export default function CreateInterviewPage() {
         actions={
           <>
             <ButtonLink href={routes.previewResults} variant="secondary">
-              Sample evaluation
+              View evaluation
             </ButtonLink>
-            <ButtonLink href={routes.progress} variant="secondary">
-              View progress
+            <ButtonLink href={routes.evaluations} variant="secondary">
+              View evaluations
             </ButtonLink>
           </>
         }

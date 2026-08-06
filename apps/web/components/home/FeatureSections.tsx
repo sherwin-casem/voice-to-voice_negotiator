@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { FEATURE_CARDS, PRODUCT_FLOW, routes } from "@/lib/routes";
 
@@ -13,27 +11,19 @@ export function ProductFlowSection() {
             From session creation to scored feedback in four steps.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">
-            Every step below opens the real app experience — start a session, configure your
-            interview, practice live, or explore a sample evaluation report.
+            Here is what to expect from your first session through your scored feedback report.
+            Each stage builds on the last so you always know what to do next.
           </p>
         </div>
 
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PRODUCT_FLOW.map((step) => (
             <li key={step.step}>
-              <Link
-                href={step.href}
-                className="group glass-panel flex h-full flex-col p-5 transition-colors hover:bg-[var(--bg-panel-hover)]"
-              >
+              <article className="glass-panel flex h-full flex-col p-5">
                 <p className="text-section-label">Step {step.step}</p>
-                <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)] group-hover:text-teal-300">
-                  {step.title}
-                </h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{step.detail}</p>
-                <span className="mt-4 text-sm font-medium text-teal-400 group-hover:text-teal-300">
-                  Open →
-                </span>
-              </Link>
+                <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{step.title}</h3>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{step.detail}</p>
+              </article>
             </li>
           ))}
         </ol>
@@ -44,7 +34,7 @@ export function ProductFlowSection() {
 
 export function FeatureSections() {
   return (
-    <div className="relative border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
+    <section id="features" className="relative scroll-mt-28 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="mb-14 max-w-2xl">
           <p className="text-section-label">Built for real preparation</p>
@@ -70,6 +60,6 @@ export function FeatureSections() {
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

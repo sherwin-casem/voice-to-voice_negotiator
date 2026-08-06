@@ -25,7 +25,7 @@ export function PreviewNoticeBanner({ className }: { className?: string }) {
     <div className={cn("mb-6", className)}>
       <Alert variant="warning" title="Preview mode">
         <p>
-          Some screens still show sample data (progress trends, evaluation scores, live metrics)
+          Some screens still show placeholder data (progress trends, evaluation scores, live metrics)
           until backend endpoints are fully wired. Voice interviews and session setup use the real
           API.
         </p>

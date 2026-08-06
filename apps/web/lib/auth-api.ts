@@ -67,6 +67,16 @@ function normalizeAuthResponse(raw: {
 }
 
 async function parseJsonBody<T>(response: Response): Promise<ApiResponse<T>> {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    if (response.status === 404) {
+      throw new Error(
+        "Authentication service is unavailable. Ensure the API server is running and exposes /api/v1/auth/* routes.",
+      );
+    }
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
   return (await response.json()) as ApiResponse<T>;
 }
 

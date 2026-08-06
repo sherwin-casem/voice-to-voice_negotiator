@@ -1,6 +1,6 @@
 import type { ApiResponse } from "@voice/shared";
 
-import { env } from "@/lib/env";
+import { env, getWebSocketBaseUrl } from "@/lib/env";
 import {
   clearAuthState,
   getAccessToken,
@@ -116,7 +116,7 @@ export async function apiFetch<T>(
 }
 
 export function getWebSocketUrl(path: string): string {
-  const parsed = new URL(env.wsUrl ?? env.apiUrl);
+  const parsed = new URL(getWebSocketBaseUrl());
   parsed.protocol = parsed.protocol === "https:" ? "wss:" : "ws:";
   return `${parsed.origin}${path}`;
 }

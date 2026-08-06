@@ -78,6 +78,7 @@ async def test_register_creates_user_and_tokens(auth_service: AuthService, auth_
     auth_repository.get_user_by_email.return_value = None
     user = _user()
     auth_repository.create_user.return_value = user
+    auth_repository.get_user_by_id.return_value = user
     auth_repository.store_refresh_token.return_value = RefreshToken(
         id=uuid.uuid4(),
         user_id=user.id,
@@ -107,6 +108,7 @@ async def test_register_duplicate_email_raises(auth_service: AuthService, auth_r
 async def test_login_success(auth_service: AuthService, auth_repository: AsyncMock) -> None:
     user = _user()
     auth_repository.get_user_by_email.return_value = user
+    auth_repository.get_user_by_id.return_value = user
 
     logged_in_user, access_token, refresh_token = await auth_service.login(
         "user@example.com",

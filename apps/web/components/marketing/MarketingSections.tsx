@@ -1,8 +1,7 @@
-import Link from "next/link";
+"use client";
 
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { AuthEntryButtonLink, AuthEntryLink } from "@/components/auth/AuthEntryLink";
 import { cn } from "@/lib/format";
-
 export function MarketingHero({
   eyebrow,
   title,
@@ -26,13 +25,13 @@ export function MarketingHero({
       </h1>
       <p className="mt-4 text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">{description}</p>
       <div className="mt-8 flex flex-wrap gap-3">
-        <ButtonLink href={primaryCta.href} className="px-6 py-2.5 text-sm">
+        <AuthEntryButtonLink href={primaryCta.href} className="px-6 py-2.5 text-sm">
           {primaryCta.label} →
-        </ButtonLink>
+        </AuthEntryButtonLink>
         {secondaryCta ? (
-          <ButtonLink href={secondaryCta.href} variant="secondary" className="px-6 py-2.5 text-sm">
+          <AuthEntryButtonLink href={secondaryCta.href} variant="secondary" className="px-6 py-2.5 text-sm">
             {secondaryCta.label}
-          </ButtonLink>
+          </AuthEntryButtonLink>
         ) : null}
       </div>
     </section>
@@ -93,13 +92,13 @@ export function MarketingCtaBand({
         <p className="mt-2 max-w-xl text-sm text-[var(--text-muted)]">{description}</p>
       </div>
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-        <ButtonLink href={primaryCta.href} className="justify-center px-6 py-2.5">
+        <AuthEntryButtonLink href={primaryCta.href} className="justify-center px-6 py-2.5">
           {primaryCta.label} →
-        </ButtonLink>
+        </AuthEntryButtonLink>
         {secondaryCta ? (
-          <ButtonLink href={secondaryCta.href} variant="secondary" className="justify-center px-6 py-2.5">
+          <AuthEntryButtonLink href={secondaryCta.href} variant="secondary" className="justify-center px-6 py-2.5">
             {secondaryCta.label}
-          </ButtonLink>
+          </AuthEntryButtonLink>
         ) : null}
       </div>
     </section>
@@ -114,14 +113,14 @@ export function CrossLinkGrid({
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {links.map((link) => (
-        <Link
+        <AuthEntryLink
           key={link.href}
           href={link.href}
-          className="glass-panel group p-5 transition-colors hover:bg-[var(--bg-panel-hover)]"
+          className="glass-panel group block p-5 transition-colors hover:bg-[var(--bg-panel-hover)]"
         >
           <p className="font-medium text-[var(--text-primary)] group-hover:text-teal-300">{link.label}</p>
           <p className="mt-2 text-sm text-[var(--text-muted)]">{link.description}</p>
-        </Link>
+        </AuthEntryLink>
       ))}
     </div>
   );

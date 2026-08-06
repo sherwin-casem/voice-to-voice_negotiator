@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { AuthEntryButtonLink } from "@/components/auth/AuthEntryLink";
 import { cn } from "@/lib/format";
 
 export function PricingTierCards({
@@ -48,13 +48,13 @@ export function PricingTierCards({
               </li>
             ))}
           </ul>
-          <ButtonLink
+          <AuthEntryButtonLink
             href={tier.cta.href}
             variant={tier.featured ? "primary" : "secondary"}
             className="mt-6 w-full justify-center py-2"
           >
             {tier.cta.label}
-          </ButtonLink>
+          </AuthEntryButtonLink>
         </article>
       ))}
     </div>

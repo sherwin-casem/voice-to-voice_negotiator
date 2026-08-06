@@ -19,6 +19,25 @@ export const routes = {
       : `/interviews/${sessionId}/results`,
 } as const;
 
+export function isProtectedAppRoute(href: string): boolean {
+  const [path, query = ""] = href.split("?");
+  if (path.startsWith("/interviews/") && query.includes("preview=1")) {
+    return false;
+  }
+  return path === routes.evaluations || path === routes.createInterview || path.startsWith("/interviews/");
+}
+
+export function registerWithNext(next: string): string {
+  return `${routes.register}?next=${encodeURIComponent(next)}`;
+}
+
+export function resolveAuthEntryHref(targetHref: string, isAuthenticated: boolean): string {
+  if (isAuthenticated || !isProtectedAppRoute(targetHref)) {
+    return targetHref;
+  }
+  return registerWithNext(targetHref);
+}
+
 export type HomeSection = "features" | "evaluation" | "practice" | "flow";
 
 export const PRODUCT_FLOW = [

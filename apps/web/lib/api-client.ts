@@ -1,6 +1,12 @@
 import type { ApiResponse } from "@voice/shared";
 
 import { env } from "@/lib/env";
+import {
+  clearAuthState,
+  getAccessToken,
+  refreshAccessToken,
+  setAccessToken,
+} from "@/lib/auth-api";
 
 export class ApiClientError extends Error {
   constructor(
@@ -36,22 +42,24 @@ async function parseJsonBody<T>(response: Response): Promise<ApiResponse<T>> {
   }
 }
 
-export async function apiFetch<T>(
+async function apiFetchOnce<T>(
   path: string,
-  options: RequestInit & { userId: string; timeoutMs?: number },
+  options: RequestInit & { accessToken?: string | null; timeoutMs?: number },
 ): Promise<T> {
-  const { userId, headers, timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = options;
+  const { accessToken, headers, timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = options;
   const url = `${env.apiUrl}${path}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const token = accessToken ?? getAccessToken();
 
   try {
     const response = await fetch(url, {
       ...rest,
       signal: controller.signal,
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        "X-User-Id": userId,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
     });
@@ -84,6 +92,26 @@ export async function apiFetch<T>(
     throw error;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit & { accessToken?: string | null; timeoutMs?: number; retryOn401?: boolean } = {},
+): Promise<T> {
+  const { retryOn401 = true, ...rest } = options;
+
+  try {
+    return await apiFetchOnce<T>(path, rest);
+  } catch (error) {
+    if (retryOn401 && error instanceof ApiClientError && error.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return apiFetchOnce<T>(path, { ...rest, accessToken: refreshed });
+      }
+      clearAuthState();
+    }
+    throw error;
   }
 }
 

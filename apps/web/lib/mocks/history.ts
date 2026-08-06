@@ -53,3 +53,11 @@ export const MOCK_PROGRESS_TRENDS: ProgressSnapshotPreview[] = [
   { dimension: "Relevance", latest: 81, previous: 79 },
   { dimension: "Structure", latest: 70, previous: 65 },
 ];
+
+export function getHistorySessionById(sessionId: string): HistorySessionPreview | undefined {
+  return MOCK_HISTORY_SESSIONS.find((session) => session.id === sessionId);
+}
+
+export function canViewSessionResults(session: HistorySessionPreview): boolean {
+  return session.status === "completed";
+}

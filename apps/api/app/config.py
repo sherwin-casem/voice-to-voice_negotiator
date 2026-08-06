@@ -74,5 +74,13 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.app_env == "production"
 
+    jwt_secret: str = "change-me-in-production"
+    jwt_access_ttl_minutes: int = 15
+    jwt_refresh_ttl_days: int = 30
+    auth_cookie_name: str = "vvn_refresh_token"
+    auth_cookie_secure: bool = False
+    auth_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
+    allow_dev_user_header: bool = True
+
 
 settings = Settings()

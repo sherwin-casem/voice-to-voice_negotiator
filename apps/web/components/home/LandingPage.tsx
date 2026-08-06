@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { FeatureSections, ProductFlowSection } from "@/components/home/FeatureSections";
+import { FeatureSectionsTeaser, ProductFlowSection } from "@/components/home/FeatureSections";
 import { LandingFooter } from "@/components/home/LandingFooter";
 import { LandingHero } from "@/components/home/LandingHero";
 import { SiteNav } from "@/components/navigation/SiteNav";
@@ -39,7 +39,7 @@ export function LandingPage() {
       <main className="relative z-10">
         <LandingHero />
         <ProductFlowSection />
-        <FeatureSections />
+        <FeatureSectionsTeaser />
         <LandingFooter />
       </main>
     </div>

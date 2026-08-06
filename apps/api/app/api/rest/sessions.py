@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
-from app.modules.interview.deps import get_interview_orchestrator, get_interview_repository, get_user_id
+from app.modules.interview.deps import get_interview_orchestrator, get_interview_repository
+from app.modules.auth.deps import get_user_id
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.interview.repository import InterviewRepository
 from app.modules.interview.schemas import (
@@ -19,6 +20,8 @@ from app.schemas.interview import (
     QuestionResponse,
     QuestionResultResponse,
     SessionResponse,
+    SessionListResponse,
+    SessionSummaryResponse,
     SubmitAnswerRequest,
     SubmitAnswerResponse,
     AnswerResponse,
@@ -68,6 +71,37 @@ def _answer_response(record: AnswerRecord) -> AnswerResponse:
         duration_ms=record.duration_ms,
         word_count=record.word_count,
     )
+
+
+def _session_summary(
+    record: SessionRecord,
+    overall_score: float | None,
+) -> SessionSummaryResponse:
+    config = record.config_snapshot or {}
+    target_role = config.get("target_role")
+    return SessionSummaryResponse(
+        id=record.id,
+        title=record.title,
+        interview_type=record.interview_type,
+        status=record.status,
+        ended_at=record.ended_at,
+        target_role=str(target_role) if target_role else None,
+        overall_score=overall_score,
+    )
+
+
+@router.get("/sessions", response_model=ApiResponse[SessionListResponse])
+async def list_sessions(
+    user_id: UUID = Depends(get_user_id),
+    repository: InterviewRepository = Depends(get_interview_repository),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> ApiResponse[SessionListResponse]:
+    sessions = await repository.list_sessions_for_user(user_id, limit=limit, offset=offset)
+    records = [InterviewRepository.to_session_record(session) for session in sessions]
+    scores = await repository.get_latest_overall_scores([record.id for record in records])
+    items = [_session_summary(record, scores.get(record.id)) for record in records]
+    return ApiResponse(data=SessionListResponse(items=items, limit=limit, offset=offset))
 
 
 @router.post("/sessions", response_model=ApiResponse[SessionResponse])

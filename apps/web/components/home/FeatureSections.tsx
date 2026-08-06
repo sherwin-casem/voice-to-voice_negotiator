@@ -1,7 +1,5 @@
-import Link from "next/link";
-
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { FEATURE_CARDS, PRODUCT_FLOW, routes } from "@/lib/routes";
+import { PRODUCT_FLOW, routes } from "@/lib/routes";
 
 export function ProductFlowSection() {
   return (
@@ -13,27 +11,19 @@ export function ProductFlowSection() {
             From session creation to scored feedback in four steps.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">
-            Every step below opens the real app experience — start a session, configure your
-            interview, practice live, or explore a sample evaluation report.
+            Here is what to expect from your first session through your scored feedback report.
+            Each stage builds on the last so you always know what to do next.
           </p>
         </div>
 
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PRODUCT_FLOW.map((step) => (
             <li key={step.step}>
-              <Link
-                href={step.href}
-                className="group glass-panel flex h-full flex-col p-5 transition-colors hover:bg-[var(--bg-panel-hover)]"
-              >
+              <article className="glass-panel flex h-full flex-col p-5">
                 <p className="text-section-label">Step {step.step}</p>
-                <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)] group-hover:text-teal-300">
-                  {step.title}
-                </h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{step.detail}</p>
-                <span className="mt-4 text-sm font-medium text-teal-400 group-hover:text-teal-300">
-                  Open →
-                </span>
-              </Link>
+                <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{step.title}</h3>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{step.detail}</p>
+              </article>
             </li>
           ))}
         </ol>
@@ -42,34 +32,26 @@ export function ProductFlowSection() {
   );
 }
 
-export function FeatureSections() {
+export function FeatureSectionsTeaser() {
   return (
-    <div className="relative border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mb-14 max-w-2xl">
+    <section className="relative scroll-mt-28 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <div className="max-w-2xl">
           <p className="text-section-label">Built for real preparation</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl">
             From first question to final score — entirely by voice.
           </h2>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {FEATURE_CARDS.map((feature) => (
-            <article
-              key={feature.id}
-              id={feature.id}
-              className="glass-panel scroll-mt-28 flex flex-col p-6 transition-colors hover:bg-[var(--bg-panel-hover)]"
-            >
-              <p className="text-section-label text-teal-400/90">{feature.eyebrow}</p>
-              <h3 className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{feature.title}</h3>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{feature.body}</p>
-              <ButtonLink href={feature.href} variant="secondary" className="mt-6 w-full justify-center py-2">
-                {feature.cta} →
-              </ButtonLink>
-            </article>
-          ))}
+          <p className="mt-4 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">
+            Voice practice, multi-agent evaluation, and longitudinal coaching — everything you need
+            to prepare for real interview conversations, not just written flashcards.
+          </p>
+          <div className="mt-8">
+            <ButtonLink href={routes.features} variant="secondary" className="px-6 py-2.5">
+              Explore all features →
+            </ButtonLink>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

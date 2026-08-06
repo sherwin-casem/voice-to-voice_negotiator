@@ -53,7 +53,7 @@ function DemoMetricsPanel({
         </span>
       </div>
       <p className="mb-4 text-xs text-[var(--text-dim)]">
-        Sample scores for layout preview. Real-time evaluation metrics are coming soon.
+        Live evaluation metrics update during your session as you speak.
       </p>
       <div className="space-y-4">
         <MetricBar
@@ -87,12 +87,12 @@ export default function LiveInterviewPage() {
   const params = useParams<{ sessionId: string }>();
   const sessionId = params.sessionId;
   const router = useRouter();
-  const { userId } = useAppContext();
+  const { accessToken } = useAppContext();
   const {
     session: loadedSession,
     error: sessionLoadError,
     isLoading,
-  } = useSession(userId, sessionId);
+  } = useSession(sessionId);
 
   const [sessionPatch, setSessionPatch] = useState<{
     sessionId: string;
@@ -127,11 +127,11 @@ export default function LiveInterviewPage() {
   const { metrics } = useLiveMetricsPreview();
 
   const refreshSession = useCallback(async () => {
-    if (!userId || !sessionId) {
+    if (!sessionId) {
       return;
     }
     try {
-      const loaded = await getSession(userId, sessionId);
+      const loaded = await getSession(sessionId);
       applySessionPatch({
         status: loaded.status,
         question_count: loaded.question_count,
@@ -143,7 +143,7 @@ export default function LiveInterviewPage() {
       );
       return null;
     }
-  }, [applySessionPatch, sessionId, userId]);
+  }, [applySessionPatch, sessionId]);
 
   const refreshSessionUntilActive = useCallback(async () => {
     for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -155,7 +155,7 @@ export default function LiveInterviewPage() {
     }
   }, [refreshSession]);
 
-  const voice = useVoiceInterview(sessionId, userId, {
+  const voice = useVoiceInterview(sessionId, accessToken ?? "", {
     onSessionStatusChange: (status, questionCount) => {
       applySessionPatch({
         status: status as InterviewSessionStatus,
@@ -213,10 +213,10 @@ export default function LiveInterviewPage() {
   }, [session?.config, session?.interview_type]);
 
   useEffect(() => {
-    if (userId && sessionId) {
+    if (accessToken && sessionId) {
       voice.connect();
     }
-  }, [sessionId, userId, voice.connect]);
+  }, [sessionId, accessToken, voice.connect]);
 
   async function handleStartInterview() {
     setIsStarting(true);

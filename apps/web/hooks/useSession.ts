@@ -12,18 +12,18 @@ interface SessionLoadState {
   error: string | null;
 }
 
-export function useSession(userId: string, sessionId: string) {
-  const fetchKey = `${userId}:${sessionId}`;
+export function useSession(sessionId: string) {
+  const fetchKey = sessionId;
   const [state, setState] = useState<SessionLoadState | null>(null);
 
   useEffect(() => {
-    if (!userId || !sessionId) {
+    if (!sessionId) {
       return;
     }
 
     let cancelled = false;
 
-    getSession(userId, sessionId)
+    getSession(sessionId)
       .then((session) => {
         if (!cancelled) {
           setState({ fetchKey, session, error: null });
@@ -45,13 +45,13 @@ export function useSession(userId: string, sessionId: string) {
     return () => {
       cancelled = true;
     };
-  }, [fetchKey, sessionId, userId]);
+  }, [fetchKey, sessionId]);
 
   const isCurrent = state?.fetchKey === fetchKey;
 
   return {
     session: isCurrent ? state.session : null,
     error: isCurrent ? state.error : null,
-    isLoading: !userId || !sessionId || !isCurrent,
+    isLoading: !sessionId || !isCurrent,
   };
 }

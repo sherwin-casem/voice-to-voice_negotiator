@@ -27,3 +27,13 @@ class ConflictError(AppError):
 class InvalidStateError(AppError):
     def __init__(self, message: str) -> None:
         super().__init__("INVALID_STATE", message, status_code=409)
+
+
+class UnauthorizedError(AppError):
+    def __init__(self, message: str = "Authentication required") -> None:
+        super().__init__("UNAUTHORIZED", message, status_code=401)
+
+
+class ForbiddenError(AppError):
+    def __init__(self, message: str = "Forbidden") -> None:
+        super().__init__("FORBIDDEN", message, status_code=403)

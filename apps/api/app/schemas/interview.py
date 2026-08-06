@@ -51,6 +51,22 @@ class SessionResponse(BaseModel):
     end_reason: str | None
 
 
+class SessionSummaryResponse(BaseModel):
+    id: UUID
+    title: str | None
+    interview_type: InterviewType
+    status: InterviewSessionStatus
+    ended_at: datetime | None
+    target_role: str | None = None
+    overall_score: float | None = None
+
+
+class SessionListResponse(BaseModel):
+    items: list[SessionSummaryResponse]
+    limit: int
+    offset: int
+
+
 class QuestionResponse(BaseModel):
     id: UUID
     session_id: UUID

@@ -1,5 +1,6 @@
 "use client";
 
+import { INTERVIEW_TYPE_LABELS } from "@voice/shared";
 import { Suspense, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 
@@ -18,10 +19,10 @@ import { SessionStatusBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
-import { useAppContext } from "@/context/AppProvider";
 import { useSession } from "@/hooks/useSession";
 import { formatDate } from "@/lib/format";
 import { buildPreviewEvaluation } from "@/lib/mocks/evaluation";
+import { getHistorySessionById } from "@/lib/mocks/history";
 import { routes } from "@/lib/routes";
 
 function ResultsContent() {
@@ -29,16 +30,22 @@ function ResultsContent() {
   const searchParams = useSearchParams();
   const sessionId = params.sessionId;
   const isPreviewMode = searchParams.get("preview") === "1";
-  const { userId } = useAppContext();
   const { session, error: loadError, isLoading: sessionLoading } = useSession(
-    isPreviewMode ? "" : userId,
     isPreviewMode ? "" : sessionId,
   );
   const isLoading = isPreviewMode ? false : sessionLoading;
 
+  const previewSession = useMemo(
+    () => (isPreviewMode ? getHistorySessionById(sessionId) : undefined),
+    [isPreviewMode, sessionId],
+  );
+
   const evaluation = useMemo(
-    () => buildPreviewEvaluation(session?.title ?? "Interview session"),
-    [session?.title],
+    () =>
+      buildPreviewEvaluation(previewSession?.title ?? session?.title ?? "Interview session", {
+        overallScore: previewSession?.overall_score,
+      }),
+    [previewSession, session?.title],
   );
 
   if (isLoading) {
@@ -57,8 +64,8 @@ function ResultsContent() {
             <ButtonLink href={routes.home} variant="secondary">
               Home
             </ButtonLink>
-            <ButtonLink href={routes.progress} variant="secondary">
-              View progress
+            <ButtonLink href={routes.evaluations} variant="secondary">
+              View evaluations
             </ButtonLink>
             <ButtonLink href={routes.createInterview}>New interview</ButtonLink>
           </>
@@ -91,35 +98,68 @@ function ResultsContent() {
         </aside>
 
         <div className="space-y-6">
-          {session ? (
+          {(session ?? previewSession) ? (
             <Card>
               <CardHeading>Session summary</CardHeading>
-              <CardDescription>Loaded from the interview session API.</CardDescription>
+              <CardDescription>
+                {session
+                  ? "Loaded from the interview session API."
+                  : "Loaded from your evaluations history."}
+              </CardDescription>
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-[var(--text-muted)]">Title</dt>
                   <dd className="font-medium text-[var(--text-primary)]">
-                    {session.title ?? "Untitled session"}
+                    {session?.title ?? previewSession?.title ?? "Untitled session"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-[var(--text-muted)]">Status</dt>
                   <dd className="mt-1">
-                    <SessionStatusBadge status={session.status} />
+                    <SessionStatusBadge
+                      status={session?.status ?? previewSession?.status ?? "completed"}
+                    />
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-[var(--text-muted)]">Questions asked</dt>
-                  <dd className="font-medium text-[var(--text-primary)]">
-                    {session.question_count}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-[var(--text-muted)]">Ended</dt>
-                  <dd className="font-medium text-[var(--text-primary)]">
-                    {formatDate(session.ended_at)}
-                  </dd>
-                </div>
+                {session ? (
+                  <>
+                    <div>
+                      <dt className="text-[var(--text-muted)]">Questions asked</dt>
+                      <dd className="font-medium text-[var(--text-primary)]">
+                        {session.question_count}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[var(--text-muted)]">Ended</dt>
+                      <dd className="font-medium text-[var(--text-primary)]">
+                        {formatDate(session.ended_at)}
+                      </dd>
+                    </div>
+                  </>
+                ) : previewSession ? (
+                  <>
+                    <div>
+                      <dt className="text-[var(--text-muted)]">Interview type</dt>
+                      <dd className="font-medium text-[var(--text-primary)]">
+                        {INTERVIEW_TYPE_LABELS[previewSession.interview_type]}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[var(--text-muted)]">Completed</dt>
+                      <dd className="font-medium text-[var(--text-primary)]">
+                        {formatDate(previewSession.completed_at)}
+                      </dd>
+                    </div>
+                    {previewSession.target_role ? (
+                      <div className="sm:col-span-2">
+                        <dt className="text-[var(--text-muted)]">Target role</dt>
+                        <dd className="font-medium text-[var(--text-primary)]">
+                          {previewSession.target_role}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
               </dl>
             </Card>
           ) : null}

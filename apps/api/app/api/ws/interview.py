@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, WebSocket
+from fastapi import APIRouter, Depends, WebSocket
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_async_session
+from app.modules.auth.ws import parse_ws_user_id
 from app.modules.interview.deps import get_interviewer_agent
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.interview.repository import InterviewRepository
@@ -14,10 +15,6 @@ from app.modules.voice.ws.manager import VoiceConnectionManager
 
 router = APIRouter(tags=["voice"])
 connection_manager = VoiceConnectionManager()
-
-
-def _parse_user_id(user_id: str = Query(..., alias="user_id")) -> UUID:
-    return UUID(user_id)
 
 
 def build_voice_connection_handler(
@@ -53,7 +50,7 @@ def build_voice_connection_handler(
 async def interview_voice_ws(
     websocket: WebSocket,
     session_id: UUID,
-    user_id: UUID = Depends(_parse_user_id),
+    user_id: UUID = Depends(parse_ws_user_id),
     db_session: AsyncSession = Depends(get_async_session),
 ) -> None:
     handler = build_voice_connection_handler(websocket, session_id, user_id, db_session)

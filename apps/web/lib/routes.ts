@@ -2,6 +2,11 @@ export const PREVIEW_SESSION_ID = "preview-1";
 
 export const routes = {
   home: "/",
+  features: "/features",
+  pricing: "/pricing",
+  resources: "/resources",
+  login: "/login",
+  register: "/register",
   createInterview: "/interviews/new",
   evaluations: "/evaluations",
   previewResults: `/interviews/${PREVIEW_SESSION_ID}/results?preview=1`,
@@ -74,7 +79,8 @@ export const FEATURE_CARDS = [
 ] as const;
 
 export const SITE_NAV_LINKS = [
-  { label: "Features", href: routes.homeSection("features"), isHash: true, section: "features" as const },
-  { label: "Evaluations", href: routes.evaluations, isHash: false },
-  { label: "Voice Practice", href: routes.homeSection("practice"), isHash: true, section: "practice" as const },
+  { label: "Features", href: routes.features },
+  { label: "Evaluations", href: routes.evaluations },
+  { label: "Pricing", href: routes.pricing },
+  { label: "Resources", href: routes.resources },
 ] as const;

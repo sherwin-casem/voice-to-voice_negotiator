@@ -19,7 +19,6 @@ import { SessionStatusBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
-import { useAppContext } from "@/context/AppProvider";
 import { useSession } from "@/hooks/useSession";
 import { formatDate } from "@/lib/format";
 import { buildPreviewEvaluation } from "@/lib/mocks/evaluation";
@@ -31,9 +30,7 @@ function ResultsContent() {
   const searchParams = useSearchParams();
   const sessionId = params.sessionId;
   const isPreviewMode = searchParams.get("preview") === "1";
-  const { userId } = useAppContext();
   const { session, error: loadError, isLoading: sessionLoading } = useSession(
-    isPreviewMode ? "" : userId,
     isPreviewMode ? "" : sessionId,
   );
   const isLoading = isPreviewMode ? false : sessionLoading;

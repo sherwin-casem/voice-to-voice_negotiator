@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from app.modules.interview.deps import get_user_id
+from app.modules.auth.deps import get_user_id
 from app.modules.progress.constants import DIMENSION_LABELS
 from app.modules.progress.deps import get_progress_analysis_service
 from app.modules.progress.service import ProgressAnalysisService

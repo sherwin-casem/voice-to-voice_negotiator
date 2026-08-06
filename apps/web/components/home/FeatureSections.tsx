@@ -1,5 +1,5 @@
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { FEATURE_CARDS, PRODUCT_FLOW, routes } from "@/lib/routes";
+import { PRODUCT_FLOW, routes } from "@/lib/routes";
 
 export function ProductFlowSection() {
   return (
@@ -32,32 +32,24 @@ export function ProductFlowSection() {
   );
 }
 
-export function FeatureSections() {
+export function FeatureSectionsTeaser() {
   return (
-    <section id="features" className="relative scroll-mt-28 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mb-14 max-w-2xl">
+    <section className="relative scroll-mt-28 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <div className="max-w-2xl">
           <p className="text-section-label">Built for real preparation</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl">
             From first question to final score — entirely by voice.
           </h2>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {FEATURE_CARDS.map((feature) => (
-            <article
-              key={feature.id}
-              id={feature.id}
-              className="glass-panel scroll-mt-28 flex flex-col p-6 transition-colors hover:bg-[var(--bg-panel-hover)]"
-            >
-              <p className="text-section-label text-teal-400/90">{feature.eyebrow}</p>
-              <h3 className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{feature.title}</h3>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{feature.body}</p>
-              <ButtonLink href={feature.href} variant="secondary" className="mt-6 w-full justify-center py-2">
-                {feature.cta} →
-              </ButtonLink>
-            </article>
-          ))}
+          <p className="mt-4 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">
+            Voice practice, multi-agent evaluation, and longitudinal coaching — everything you need
+            to prepare for real interview conversations, not just written flashcards.
+          </p>
+          <div className="mt-8">
+            <ButtonLink href={routes.features} variant="secondary" className="px-6 py-2.5">
+              Explore all features →
+            </ButtonLink>
+          </div>
         </div>
       </div>
     </section>

@@ -53,7 +53,7 @@ export interface VoiceInterviewState {
 
 export function useVoiceInterview(
   sessionId: string,
-  userId: string,
+  accessToken: string,
   options: VoiceInterviewOptions = {},
 ): VoiceInterviewState {
   const [connectionState, setConnectionState] = useState<WsConnectionState>("idle");
@@ -279,7 +279,7 @@ export function useVoiceInterview(
   }, [stopCapture]);
 
   const connect = useCallback(() => {
-    if (!sessionId || !userId) {
+    if (!sessionId || !accessToken) {
       return;
     }
 
@@ -289,7 +289,7 @@ export function useVoiceInterview(
     setErrorMessage(null);
     setIsSessionReady(false);
 
-    const client = new InterviewWebSocket(sessionId, userId);
+    const client = new InterviewWebSocket(sessionId, accessToken);
     clientRef.current = client;
     client.connect(
       handleEnvelope,
@@ -315,7 +315,7 @@ export function useVoiceInterview(
         setConnectionState("disconnected");
       },
     );
-  }, [handleEnvelope, sessionId, userId]);
+  }, [handleEnvelope, sessionId, accessToken]);
 
   const startInterview = useCallback(async () => {
     if (!clientRef.current?.isOpen) {

@@ -20,7 +20,7 @@ export class InterviewWebSocket {
 
   constructor(
     private readonly sessionId: string,
-    private readonly userId: string,
+    private readonly accessToken: string,
     private readonly options: InterviewWebSocketOptions = {},
   ) {}
 
@@ -68,7 +68,7 @@ export class InterviewWebSocket {
 
     this.onConnectionChange?.(false, isReconnect);
 
-    const path = API_ROUTES.voiceWebSocket(this.sessionId, this.userId);
+    const path = API_ROUTES.voiceWebSocket(this.sessionId, this.accessToken);
     this.socket = new WebSocket(getWebSocketUrl(path));
 
     this.socket.onopen = () => {

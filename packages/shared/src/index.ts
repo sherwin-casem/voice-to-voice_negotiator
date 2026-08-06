@@ -106,6 +106,63 @@ export interface JobDescriptionResponse {
   created_at: string;
 }
 
+export interface SessionSummaryResponse {
+  id: string;
+  title: string | null;
+  interview_type: InterviewType;
+  status: InterviewSessionStatus;
+  ended_at: string | null;
+  target_role: string | null;
+  overall_score: number | null;
+}
+
+export interface SessionListResponse {
+  items: SessionSummaryResponse[];
+  limit: number;
+  offset: number;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  display_name?: string | null;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: UserResponse;
+}
+
+export interface DimensionTrendResponse {
+  dimension: string;
+  label: string;
+  direction: string;
+  recent_average: number;
+  prior_average: number;
+  delta: number;
+  sessions_compared: number;
+  comparable_sessions: number;
+}
+
+export interface ProgressAnalysisResponse {
+  user_id: string;
+  sessions_analyzed: number;
+  window_size: number;
+  dimension_trends: DimensionTrendResponse[];
+  recurring_weaknesses: Array<{
+    pattern: string;
+    label: string;
+    occurrences: number;
+    session_count: number;
+    frequency: number;
+    is_persistent: boolean;
+  }>;
+  improvements: string[];
+  persistent_weaknesses: string[];
+  narrative_summary: string;
+}
+
 export interface CreateSessionRequest {
   title?: string | null;
 }
@@ -137,8 +194,13 @@ export const API_ROUTES = {
   jobDescription: (id: string) => `/api/v1/context/job-descriptions/${id}`,
   jobDescriptionUpload: "/api/v1/context/job-descriptions/upload",
   progress: "/api/v1/progress",
-  voiceWebSocket: (sessionId: string, userId: string) =>
-    `/api/v1/ws/interview/${sessionId}?user_id=${userId}`,
+  authRegister: "/api/v1/auth/register",
+  authLogin: "/api/v1/auth/login",
+  authLogout: "/api/v1/auth/logout",
+  authRefresh: "/api/v1/auth/refresh",
+  authMe: "/api/v1/auth/me",
+  voiceWebSocket: (sessionId: string, accessToken: string) =>
+    `/api/v1/ws/interview/${sessionId}?access_token=${encodeURIComponent(accessToken)}`,
 } as const;
 
 export const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {

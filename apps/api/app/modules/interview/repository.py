@@ -11,6 +11,7 @@ from app.core.exceptions import NotFoundError
 from app.db.enums import InterviewSessionStatus, InterviewType
 from app.db.models.context import JobDescription, Resume
 from app.db.models.interview import CandidateAnswer, InterviewQuestion, InterviewSession
+from app.db.models.progress import UserProgressSnapshot
 from app.db.models.user import User
 from app.modules.interview.schemas import (
     AnswerRecord,
@@ -83,6 +84,41 @@ class InterviewRepository:
         if interview_session is None:
             raise NotFoundError("Interview session not found")
         return interview_session
+
+    async def list_sessions_for_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[InterviewSession]:
+        result = await self._session.execute(
+            select(InterviewSession)
+            .where(InterviewSession.user_id == user_id)
+            .order_by(InterviewSession.updated_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def get_latest_overall_scores(
+        self,
+        session_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, float]:
+        if not session_ids:
+            return {}
+
+        result = await self._session.execute(
+            select(UserProgressSnapshot.session_id, UserProgressSnapshot.overall_score)
+            .where(UserProgressSnapshot.session_id.in_(session_ids))
+            .order_by(UserProgressSnapshot.recorded_at.desc())
+        )
+
+        scores: dict[uuid.UUID, float] = {}
+        for session_id, overall_score in result.all():
+            if session_id not in scores:
+                scores[session_id] = float(overall_score)
+        return scores
 
     async def configure_session(
         self,

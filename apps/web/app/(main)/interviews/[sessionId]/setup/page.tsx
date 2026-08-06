@@ -28,8 +28,8 @@ export default function InterviewSetupPage() {
   const params = useParams<{ sessionId: string }>();
   const sessionId = params.sessionId;
   const router = useRouter();
-  const { userId } = useAppContext();
-  const { session, error: sessionError, isLoading: loadingSession } = useSession(userId, sessionId);
+  const { isAuthenticated } = useAppContext();
+  const { session, error: sessionError, isLoading: loadingSession } = useSession(sessionId);
 
   const [interviewType, setInterviewType] = useState<InterviewType | "">("");
   const [difficulty, setDifficulty] = useState<DifficultyLevel | "">("");
@@ -64,7 +64,7 @@ export default function InterviewSetupPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!userId) {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -80,7 +80,7 @@ export default function InterviewSetupPage() {
       let jobDescriptionId: string | null = null;
 
       if (resumeText.trim()) {
-        const resume = await createResume(userId, {
+        const resume = await createResume({
           title: "Session resume",
           raw_text: resumeText.trim(),
         });
@@ -88,7 +88,7 @@ export default function InterviewSetupPage() {
       }
 
       if (jobDescriptionText.trim()) {
-        const jobDescription = await createJobDescription(userId, {
+        const jobDescription = await createJobDescription({
           title: "Session job description",
           raw_text: jobDescriptionText.trim(),
         });
@@ -105,7 +105,7 @@ export default function InterviewSetupPage() {
         job_description_id: jobDescriptionId,
       };
 
-      await configureSession(userId, sessionId, body);
+      await configureSession(sessionId, body);
       router.push(`/interviews/${sessionId}/live`);
     } catch (caught) {
       setSubmitError(

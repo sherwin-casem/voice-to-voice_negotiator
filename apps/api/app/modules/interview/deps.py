@@ -7,6 +7,7 @@ from app.ai.providers.base import StructuredOutputProvider
 from app.ai.providers.factory import get_ai_providers
 from app.api.deps import get_async_session
 from app.config import settings
+from app.modules.auth.deps import get_user_id
 from app.modules.interview.interviewer_agent import InterviewerAgent, MockInterviewerLLMProvider
 from app.modules.interview.orchestrator import InterviewOrchestrator
 from app.modules.interview.repository import InterviewRepository
@@ -19,16 +20,6 @@ __all__ = [
     "get_interview_repository",
     "get_interviewer_agent",
 ]
-
-
-def get_user_id(x_user_id: str | None = Header(default=None, alias="X-User-Id")) -> UUID:
-    """Dev-only user scoping until authentication is implemented."""
-    if x_user_id is None:
-        raise HTTPException(status_code=401, detail="X-User-Id header is required")
-    try:
-        return UUID(x_user_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="X-User-Id must be a valid UUID") from exc
 
 
 def get_interviewer_agent(

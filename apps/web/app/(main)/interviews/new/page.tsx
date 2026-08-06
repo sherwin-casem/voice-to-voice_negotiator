@@ -24,7 +24,7 @@ const FLOW_STEPS = [
 
 export default function CreateInterviewPage() {
   const router = useRouter();
-  const { userId, isUserReady } = useAppContext();
+  const { isAuthenticated, isAuthReady } = useAppContext();
   const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +34,7 @@ export default function CreateInterviewPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!userId) {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -47,7 +47,7 @@ export default function CreateInterviewPage() {
     setError(null);
 
     try {
-      const session = await createSession(userId, {
+      const session = await createSession({
         title: trimmedTitle,
       });
       router.push(`/interviews/${session.id}/setup`);
@@ -123,7 +123,7 @@ export default function CreateInterviewPage() {
           <div className="flex items-center gap-3">
             <Button
               type="submit"
-              disabled={!isUserReady || !userId || !isTitleValid || isSubmitting}
+              disabled={!isAuthReady || !isAuthenticated || !isTitleValid || isSubmitting}
             >
               Continue to setup
             </Button>

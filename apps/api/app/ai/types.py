@@ -41,6 +41,7 @@ class AudioChunk:
     data: bytes
     seq: int = 0
     is_final: bool = False
+    sample_rate: int | None = None
 
 
 TextStream = AsyncIterator[str]

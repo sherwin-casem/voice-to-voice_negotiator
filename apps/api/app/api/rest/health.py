@@ -13,10 +13,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health", response_model=ApiResponse[HealthData])
-async def health_check(
+@router.get("/health/live", response_model=ApiResponse[HealthData])
+async def liveness_check() -> ApiResponse[HealthData]:
+    """Process-level liveness: no dependencies checked, never degrades."""
+    return ApiResponse(
+        data=HealthData(
+            status="ok",
+            database="not_checked",
+            environment=settings.app_env,
+        )
+    )
+
+
+async def _readiness(
     response: Response,
-    session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession,
 ) -> ApiResponse[HealthData]:
     database_status = "ok"
     try:
@@ -36,3 +47,21 @@ async def health_check(
             environment=settings.app_env,
         )
     )
+
+
+@router.get("/health/ready", response_model=ApiResponse[HealthData])
+async def readiness_check(
+    response: Response,
+    session: AsyncSession = Depends(get_async_session),
+) -> ApiResponse[HealthData]:
+    """Readiness: verifies the database is reachable."""
+    return await _readiness(response, session)
+
+
+@router.get("/health", response_model=ApiResponse[HealthData])
+async def health_check(
+    response: Response,
+    session: AsyncSession = Depends(get_async_session),
+) -> ApiResponse[HealthData]:
+    """Legacy combined health endpoint (same semantics as /health/ready)."""
+    return await _readiness(response, session)

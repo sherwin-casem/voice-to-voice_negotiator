@@ -45,9 +45,14 @@ def test_scoring_model_renormalizes_when_evaluator_failed() -> None:
 
     baseline = ScoringModel.compute(context, results)
 
-    assert baseline.dimension_scores.communication == 50.0
+    # Failed specialists are excluded, not replaced with neutral scores.
+    assert baseline.dimension_scores.communication is None
+    assert baseline.dimension_scores.confidence is None
+    assert baseline.dimension_scores.conciseness is None
+    assert "communication" not in baseline.applicable_dimensions
     assert baseline.overall_score > 0
     assert baseline.weights_applied
+    assert abs(sum(baseline.weights_applied.values()) - 1.0) < 1e-6
 
 
 def test_scoring_model_strong_technical_answer_scores_high() -> None:

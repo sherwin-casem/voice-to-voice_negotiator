@@ -187,6 +187,7 @@ export const API_ROUTES = {
   nextQuestion: (id: string) => `/api/v1/sessions/${id}/questions/next`,
   submitAnswer: (id: string) => `/api/v1/sessions/${id}/answers`,
   endSession: (id: string) => `/api/v1/sessions/${id}/end`,
+  sessionEvaluation: (id: string) => `/api/v1/sessions/${id}/evaluation`,
   resumes: "/api/v1/context/resumes",
   resume: (id: string) => `/api/v1/context/resumes/${id}`,
   resumeUpload: "/api/v1/context/resumes/upload",
@@ -199,8 +200,9 @@ export const API_ROUTES = {
   authLogout: "/api/v1/auth/logout",
   authRefresh: "/api/v1/auth/refresh",
   authMe: "/api/v1/auth/me",
-  voiceWebSocket: (sessionId: string, accessToken: string) =>
-    `/api/v1/ws/interview/${sessionId}?access_token=${encodeURIComponent(accessToken)}`,
+  authWsTicket: "/api/v1/auth/ws-ticket",
+  voiceWebSocket: (sessionId: string, ticket: string) =>
+    `/api/v1/ws/interview/${sessionId}?ticket=${encodeURIComponent(ticket)}`,
 } as const;
 
 export const INTERVIEW_TYPE_LABELS: Record<InterviewType, string> = {

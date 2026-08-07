@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import {
   CrossLinkGrid,
-  MarketingCtaBand,
   MarketingHero,
   MarketingSection,
 } from "@/components/marketing/MarketingSections";
@@ -14,7 +13,6 @@ import {
 import {
   GETTING_STARTED,
   RESOURCE_CROSS_LINKS,
-  RESOURCES_CTA,
   RESOURCES_HERO,
   RESOURCE_GUIDES,
   VOICE_TIPS,
@@ -28,7 +26,10 @@ export const metadata: Metadata = {
 export default function ResourcesPage() {
   return (
     <>
-      <MarketingHero {...RESOURCES_HERO} />
+      <MarketingHero
+        {...RESOURCES_HERO}
+        art={{ src: "/backgrounds/data-cubes.png", width: 307, height: 512 }}
+      />
 
       <MarketingSection
         eyebrow="Guides"
@@ -57,8 +58,6 @@ export default function ResourcesPage() {
       <MarketingSection eyebrow="Explore" title="More from VoxForge">
         <CrossLinkGrid links={RESOURCE_CROSS_LINKS} />
       </MarketingSection>
-
-      <MarketingCtaBand {...RESOURCES_CTA} />
     </>
   );
 }

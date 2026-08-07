@@ -3,10 +3,8 @@ import {
   type ConfigureSessionRequest,
   type CreateSessionRequest,
   type JobDescriptionResponse,
-  type QuestionResultResponse,
   type ResumeResponse,
   type SessionResponse,
-  type SubmitAnswerResponse,
 } from "@voice/shared";
 
 import { apiFetch } from "./api-client";
@@ -30,30 +28,6 @@ export function configureSession(
 ): Promise<SessionResponse> {
   return apiFetch<SessionResponse>(API_ROUTES.session(sessionId), {
     method: "PATCH",
-    body: JSON.stringify(body),
-  });
-}
-
-export function startSession(sessionId: string): Promise<SessionResponse> {
-  return apiFetch<SessionResponse>(API_ROUTES.startSession(sessionId), {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
-}
-
-export function fetchNextQuestion(sessionId: string): Promise<QuestionResultResponse> {
-  return apiFetch<QuestionResultResponse>(API_ROUTES.nextQuestion(sessionId), {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
-}
-
-export function submitAnswer(
-  sessionId: string,
-  body: { question_id: string; answer_text: string; duration_ms?: number },
-): Promise<SubmitAnswerResponse> {
-  return apiFetch<SubmitAnswerResponse>(API_ROUTES.submitAnswer(sessionId), {
-    method: "POST",
     body: JSON.stringify(body),
   });
 }

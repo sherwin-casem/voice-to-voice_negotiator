@@ -5,6 +5,8 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 _DEFAULT_DB_MARKER = "postgres:postgres@"
+_DEFAULT_JWT_SECRET = "change-me-in-production"
+_MIN_JWT_SECRET_LENGTH = 32
 
 
 def validate_settings(settings: Settings) -> None:
@@ -16,6 +18,22 @@ def validate_settings(settings: Settings) -> None:
 
     if settings.debug:
         errors.append("DEBUG must be false in production")
+
+    if settings.jwt_secret == _DEFAULT_JWT_SECRET:
+        errors.append("JWT_SECRET must be changed from the default value in production")
+    elif len(settings.jwt_secret) < _MIN_JWT_SECRET_LENGTH:
+        errors.append(
+            f"JWT_SECRET must be at least {_MIN_JWT_SECRET_LENGTH} characters in production"
+        )
+
+    if not settings.auth_cookie_secure:
+        errors.append("AUTH_COOKIE_SECURE must be true in production")
+
+    if settings.allow_dev_user_header:
+        errors.append("ALLOW_DEV_USER_HEADER must be false in production")
+
+    if not settings.rate_limit_enabled:
+        errors.append("RATE_LIMIT_ENABLED must be true in production")
 
     if settings.ai_provider == "openai" and not settings.openai_api_key:
         errors.append("OPENAI_API_KEY is required when AI_PROVIDER=openai")

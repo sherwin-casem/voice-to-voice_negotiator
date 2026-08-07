@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from app.ai.prompts.evaluation.coach.v1.builder import PROMPT_VERSION, SCHEMA_VERSION, build_coach_messages
 from app.ai.providers.base import StructuredOutputProvider
 from app.ai.schemas.evaluation.coach import ImprovementCoachOutput
+from app.ai.usage import consume_token_usage
 from app.ai.schemas.evaluation.judge import JudgeEvaluationOutput
 from app.db.enums import AgentName, EvaluationRunStatus
 from app.modules.evaluation.mock_llm import MockEvaluationLLMProvider, build_mock_coach_output
@@ -71,6 +72,7 @@ class ImprovementCoachAgent:
                 latency_ms=int((time.perf_counter() - start_ms) * 1000),
                 started_at=started_at,
                 completed_at=completed_at,
+                token_usage=consume_token_usage(),
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception(

@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/ui/ButtonLink";
+import { GlowArt } from "@/components/ui/GlowArt";
 import { PRODUCT_FLOW, routes } from "@/lib/routes";
 
 export function ProductFlowSection() {
@@ -35,7 +36,7 @@ export function ProductFlowSection() {
 export function FeatureSectionsTeaser() {
   return (
     <section className="relative scroll-mt-28 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-2">
         <div className="max-w-2xl">
           <p className="text-section-label">Built for real preparation</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl">
@@ -51,6 +52,13 @@ export function FeatureSectionsTeaser() {
             </ButtonLink>
           </div>
         </div>
+        <GlowArt
+          src="/backgrounds/voice-mic.png"
+          width={307}
+          height={512}
+          sizes="(min-width: 1024px) 20rem, 0px"
+          className="hidden w-full max-w-xs justify-self-center lg:block"
+        />
       </div>
     </section>
   );

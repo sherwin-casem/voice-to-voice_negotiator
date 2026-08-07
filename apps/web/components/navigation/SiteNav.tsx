@@ -10,6 +10,8 @@ import { useState } from "react";
 
 
 
+import { AuthEntryButtonLink } from "@/components/auth/AuthEntryLink";
+
 import { Logo } from "@/components/brand/Logo";
 
 import { Button } from "@/components/ui/Button";
@@ -198,7 +200,7 @@ export function SiteNav({
 
         <ButtonLink href={routes.createInterview} className="px-4 py-1.5 text-sm">
 
-          Start practicing
+          Get started
 
         </ButtonLink>
 
@@ -214,11 +216,11 @@ export function SiteNav({
 
         </ButtonLink>
 
-        <ButtonLink href={routes.register} className="px-4 py-1.5 text-sm">
+        <AuthEntryButtonLink href={routes.createInterview} className="px-4 py-1.5 text-sm">
 
-          Sign up
+          Get started
 
-        </ButtonLink>
+        </AuthEntryButtonLink>
 
       </>
 

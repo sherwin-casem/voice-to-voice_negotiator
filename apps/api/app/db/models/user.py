@@ -61,7 +61,7 @@ class RefreshToken(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         nullable=False,
         index=True,
     )
-    token_hash: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

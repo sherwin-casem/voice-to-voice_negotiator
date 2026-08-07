@@ -31,7 +31,6 @@ class Settings(BaseSettings):
         validation_alias="CORS_ORIGINS",
     )
 
-    voice_provider: Literal["mock"] = "mock"
     ws_max_audio_chunk_bytes: int = 256_000
     ws_max_turn_audio_bytes: int = 5_242_880
     max_upload_bytes: int = 512_000
@@ -77,6 +76,17 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-production"
     jwt_access_ttl_minutes: int = 15
     jwt_refresh_ttl_days: int = 30
+    ws_ticket_ttl_seconds: int = 60
+    # How long an ACTIVE session survives a transient disconnect before being
+    # marked abandoned.
+    ws_reconnect_grace_seconds: float = 30.0
+
+    evaluation_timeout_seconds: float = 240.0
+
+    rate_limit_enabled: bool = True
+    auth_rate_limit_per_minute: int = 10
+    ws_connect_rate_limit_per_minute: int = 20
+    ws_max_connections_per_user: int = 3
     auth_cookie_name: str = "vvn_refresh_token"
     auth_cookie_secure: bool = False
     auth_cookie_samesite: Literal["lax", "strict", "none"] = "lax"

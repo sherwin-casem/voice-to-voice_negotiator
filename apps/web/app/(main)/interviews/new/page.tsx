@@ -11,6 +11,7 @@ import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label } from "@/components/ui/FormControls";
 import { Spinner } from "@/components/ui/Alert";
 import { GlassPanel } from "@/components/ui/GlassPanel";
+import { GlowArt } from "@/components/ui/GlowArt";
 import { useAppContext } from "@/context/AppProvider";
 import { ApiClientError } from "@/lib/api-client";
 import { createSession } from "@/lib/interview-api";
@@ -80,7 +81,16 @@ export default function CreateInterviewPage() {
       />
 
       <GlassPanel className="mb-6 border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-cyan-500/5 p-6">
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">How it works</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">How it works</h2>
+          <GlowArt
+            src="/backgrounds/ai-brain.png"
+            width={191}
+            height={155}
+            sizes="5rem"
+            className="-my-4 h-20 w-auto opacity-80"
+          />
+        </div>
         <ol className="mt-4 grid gap-4 sm:grid-cols-3">
           {FLOW_STEPS.map((item) => (
             <li key={item.step} className="rounded-xl border border-[var(--border-glass)] bg-black/10 p-4">

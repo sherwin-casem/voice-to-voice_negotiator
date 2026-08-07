@@ -2,7 +2,12 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from app.ai.schemas.interviewer import InterviewerContext, PriorTurn
-from app.core.exceptions import ConflictError, InvalidStateError, NotFoundError
+from app.core.exceptions import (
+    ConflictError,
+    InvalidStateError,
+    MaxQuestionsReachedError,
+    NotFoundError,
+)
 from app.db.enums import InterviewSessionStatus
 from app.db.models.interview import InterviewSession
 from app.modules.interview.interviewer_agent import InterviewerAgent
@@ -65,13 +70,13 @@ class InterviewOrchestrator:
         self._ensure_status(interview_session, {InterviewSessionStatus.CONFIGURED})
         assert_transition(interview_session.status, InterviewSessionStatus.ACTIVE)
         await self._repository.update_session_status(interview_session, InterviewSessionStatus.ACTIVE)
-        return await self._ask_next_question(interview_session, user_id)
+        return await self._ask_next_question(interview_session)
 
     async def ask_next_question(self, session_id: UUID, user_id: UUID) -> QuestionResult:
         interview_session = await self._repository.get_session_for_user(session_id, user_id)
         self._ensure_status(interview_session, {InterviewSessionStatus.ACTIVE})
         await self._ensure_ready_for_next_question(interview_session)
-        return await self._ask_next_question(interview_session, user_id)
+        return await self._ask_next_question(interview_session)
 
     async def submit_answer(
         self,
@@ -124,10 +129,28 @@ class InterviewOrchestrator:
                 end_reason=reason,
             )
 
-        assert_transition(interview_session.status, InterviewSessionStatus.COMPLETED)
+        if interview_session.status == InterviewSessionStatus.COMPLETING:
+            # Evaluation already in flight; don't race it to COMPLETED.
+            return InterviewRepository.to_session_record(interview_session)
+
+        has_answers = any(
+            question.answer is not None for question in interview_session.questions
+        )
+        if not has_answers:
+            # Nothing to evaluate: complete directly.
+            assert_transition(interview_session.status, InterviewSessionStatus.COMPLETED)
+            return await self._repository.update_session_status(
+                interview_session,
+                InterviewSessionStatus.COMPLETED,
+                end_reason=reason,
+            )
+
+        # Hand off to the evaluation pipeline; the background runner moves the
+        # session to COMPLETED or EVALUATION_FAILED.
+        assert_transition(interview_session.status, InterviewSessionStatus.COMPLETING)
         return await self._repository.update_session_status(
             interview_session,
-            InterviewSessionStatus.COMPLETED,
+            InterviewSessionStatus.COMPLETING,
             end_reason=reason,
         )
 
@@ -152,22 +175,33 @@ class InterviewOrchestrator:
         interview_session = await self._repository.get_session_for_user(session_id, user_id)
         return InterviewRepository.to_session_record(interview_session)
 
+    async def get_current_question(
+        self,
+        session_id: UUID,
+        user_id: UUID,
+    ) -> tuple[QuestionRecord, bool] | None:
+        """Latest question and whether it has been answered (for WS resume)."""
+        interview_session = await self._repository.get_session_for_user(session_id, user_id)
+        latest = await self._repository.get_latest_question(interview_session)
+        if latest is None:
+            return None
+        return (
+            InterviewRepository.to_question_record(latest),
+            latest.answer is not None,
+        )
+
     async def _ask_next_question(
         self,
         interview_session: InterviewSession,
-        user_id: UUID,
     ) -> QuestionResult:
         config = interview_session.config_snapshot
         max_questions = config.get("max_questions")
         next_sequence = interview_session.question_count + 1
 
         if max_questions is not None and next_sequence > max_questions:
-            session = await self.end_session(
-                interview_session.id,
-                user_id,
-                reason="max_questions_reached",
+            raise MaxQuestionsReachedError(
+                "Maximum question count reached; end the session instead"
             )
-            raise ConflictError("Maximum question count reached; session has been ended")
 
         context = await self._build_interviewer_context(interview_session)
         output = await self._interviewer.generate_question(context)
@@ -193,13 +227,9 @@ class InterviewOrchestrator:
 
         session = InterviewRepository.to_session_record(interview_session)
 
-        if output.should_end_session:
-            session = await self.end_session(
-                interview_session.id,
-                user_id,
-                reason="interviewer_ended",
-            )
-
+        # should_end_session marks this as the closing question. The session
+        # stays ACTIVE so the candidate can still answer it; the caller ends
+        # the session once that final answer has been submitted.
         return QuestionResult(
             session=session,
             question=question,
@@ -268,7 +298,9 @@ class InterviewOrchestrator:
         config = interview_session.config_snapshot
         max_questions = config.get("max_questions")
         if max_questions is not None and interview_session.question_count >= max_questions:
-            raise ConflictError("Maximum question count reached; end the session instead")
+            raise MaxQuestionsReachedError(
+                "Maximum question count reached; end the session instead"
+            )
 
     @staticmethod
     def _ensure_status(

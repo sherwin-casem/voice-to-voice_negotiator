@@ -5,7 +5,7 @@ export const RESOURCES_HERO = {
   title: "Interview prep that matches real conversations.",
   description:
     "Guides, voice interview tips, and a clear path into VoxForge — so you know what to practice before you hit record.",
-  primaryCta: { label: "Start practicing", href: routes.createInterview },
+  primaryCta: { label: "Get started", href: routes.createInterview },
   secondaryCta: { label: "View features", href: routes.features },
 } as const;
 
@@ -112,10 +112,3 @@ export const RESOURCE_CROSS_LINKS = [
   { label: "Pricing", href: routes.pricing, description: "Plans and comparison" },
   { label: "Evaluations", href: routes.evaluations, description: "Session history and trends" },
 ] as const;
-
-export const RESOURCES_CTA = {
-  title: "Put the guides into practice",
-  description: "The best prep is spoken prep. Start a session and review your evaluation after.",
-  primaryCta: { label: "Start practicing", href: routes.createInterview },
-  secondaryCta: { label: "View pricing", href: routes.pricing },
-} as const;

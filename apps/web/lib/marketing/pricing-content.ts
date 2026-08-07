@@ -109,10 +109,3 @@ export const PRICING_FAQ = [
       "Voice interviews, session setup, and evaluation reports are actively being improved. Some progress and metrics views may show placeholder data while backend endpoints are completed.",
   },
 ] as const;
-
-export const PRICING_CTA = {
-  title: "Start preparing today",
-  description: "Create your first session free — no credit card required during early access.",
-  primaryCta: { label: "Get started free", href: routes.createInterview },
-  secondaryCta: { label: "See all features", href: routes.features },
-} as const;

@@ -155,11 +155,15 @@ class InterviewRepository:
         if status == InterviewSessionStatus.ACTIVE and interview_session.started_at is None:
             interview_session.started_at = datetime.now(UTC)
         if status in {
+            InterviewSessionStatus.COMPLETING,
             InterviewSessionStatus.COMPLETED,
             InterviewSessionStatus.ABANDONED,
             InterviewSessionStatus.EVALUATION_FAILED,
         }:
-            interview_session.ended_at = datetime.now(UTC)
+            # COMPLETING marks the end of the live interview; keep the original
+            # end time when evaluation later finalizes the terminal status.
+            if interview_session.ended_at is None:
+                interview_session.ended_at = datetime.now(UTC)
             interview_session.end_reason = end_reason
         await self._session.flush()
         return self._to_session_record(interview_session)
@@ -335,6 +339,10 @@ class InterviewRepository:
     @classmethod
     def to_session_record(cls, interview_session: InterviewSession) -> SessionRecord:
         return cls._to_session_record(interview_session)
+
+    @classmethod
+    def to_question_record(cls, question: InterviewQuestion) -> QuestionRecord:
+        return cls._to_question_record(question)
 
     @staticmethod
     def _to_session_record(interview_session: InterviewSession) -> SessionRecord:

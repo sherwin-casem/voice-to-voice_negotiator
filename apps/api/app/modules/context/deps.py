@@ -9,7 +9,11 @@ from app.modules.context.repository import ContextRepository
 from app.modules.context.selector import ContextSelector
 from app.modules.context.service import ContextPreparationService
 
-__all__ = ["get_context_preparation_service", "get_context_repository"]
+__all__ = [
+    "build_context_preparation_service",
+    "get_context_preparation_service",
+    "get_context_repository",
+]
 
 
 async def get_context_repository(
@@ -18,11 +22,15 @@ async def get_context_repository(
     return ContextRepository(session)
 
 
-async def get_context_preparation_service(
-    repository: ContextRepository = Depends(get_context_repository),
-) -> ContextPreparationService:
+def build_context_preparation_service(session: AsyncSession) -> ContextPreparationService:
     if settings.ai_provider == "mock":
         extractor = HeuristicContextExtractor()
     else:
         extractor = LLMContextExtractor(get_ai_providers().structured)
-    return ContextPreparationService(repository, extractor, ContextSelector())
+    return ContextPreparationService(ContextRepository(session), extractor, ContextSelector())
+
+
+async def get_context_preparation_service(
+    session: AsyncSession = Depends(get_async_session),
+) -> ContextPreparationService:
+    return build_context_preparation_service(session)

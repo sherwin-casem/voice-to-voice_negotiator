@@ -5,6 +5,8 @@ SESSION_START = "session.start"
 AUDIO_INPUT = "audio.input"
 SPEECH_END = "speech.end"
 SESSION_END = "session.end"
+# Barge-in: stop streaming interviewer TTS audio for the current turn.
+OUTPUT_CANCEL = "output.cancel"
 
 # Server → client
 SESSION_READY = "session.ready"
@@ -14,10 +16,9 @@ INTERVIEWER_THINKING = "interviewer.thinking"
 INTERVIEWER_RESPONSE = "interviewer.response"
 AUDIO_OUTPUT = "audio.output"
 SESSION_ERROR = "session.error"
-# Server confirmation uses the same event name as the client-initiated end event.
-SESSION_ENDED = "session.end"
+SESSION_ENDED = "session.ended"
 
-CLIENT_EVENT_TYPES = frozenset({SESSION_START, AUDIO_INPUT, SPEECH_END, SESSION_END})
+CLIENT_EVENT_TYPES = frozenset({SESSION_START, AUDIO_INPUT, SPEECH_END, SESSION_END, OUTPUT_CANCEL})
 SERVER_EVENT_TYPES = frozenset({
     SESSION_READY,
     TRANSCRIPT_PARTIAL,

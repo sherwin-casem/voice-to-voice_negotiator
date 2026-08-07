@@ -10,6 +10,9 @@ from app.ai.types import AudioChunk
 PROVIDER = "openai"
 logger = logging.getLogger(__name__)
 
+# OpenAI TTS "pcm" responses are always 24 kHz, 16-bit signed little-endian, mono.
+OPENAI_PCM_SAMPLE_RATE = 24_000
+
 
 class OpenAITextToSpeechProvider:
     def __init__(self, client_factory: OpenAIClientFactory, openai_settings: OpenAISettings) -> None:
@@ -44,15 +47,28 @@ class OpenAITextToSpeechProvider:
                 input=text,
                 response_format=response_format,  # type: ignore[arg-type]
             ) as response:
+                # One chunk of lookahead so the last non-empty chunk can be
+                # flagged is_final (consumers require final chunks to carry data).
                 seq = 0
+                pending: bytes | None = None
                 async for chunk in response.iter_bytes():
                     if not chunk:
                         continue
-                    yield AudioChunk(data=chunk, seq=seq, is_final=False)
-                    seq += 1
-                if seq > 0:
-                    yield AudioChunk(data=b"", seq=seq, is_final=True)
-                else:
-                    yield AudioChunk(data=b"", seq=0, is_final=True)
+                    if pending is not None:
+                        yield AudioChunk(
+                            data=pending,
+                            seq=seq,
+                            is_final=False,
+                            sample_rate=OPENAI_PCM_SAMPLE_RATE,
+                        )
+                        seq += 1
+                    pending = chunk
+                if pending is not None:
+                    yield AudioChunk(
+                        data=pending,
+                        seq=seq,
+                        is_final=True,
+                        sample_rate=OPENAI_PCM_SAMPLE_RATE,
+                    )
         except Exception as exc:  # noqa: BLE001
             raise map_openai_exception(exc) from exc

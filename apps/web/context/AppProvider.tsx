@@ -56,17 +56,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         if (refreshed) {
-          const profile = await fetchCurrentUser(refreshed);
-          if (!cancelled) {
-            setUser(profile);
+          try {
+            const profile = await fetchCurrentUser(refreshed);
+            if (!cancelled) {
+              setUser(profile);
+            }
+          } catch {
+            // Token looked valid but /me failed — treat as logged out.
+            if (!cancelled) {
+              clearAuthState();
+              setUser(null);
+            }
           }
-        } else {
+        } else if (!cancelled) {
           setUser(null);
         }
       } finally {
-        if (!cancelled) {
-          setIsAuthReady(true);
-        }
+        // Always unlock the UI for the active mount. Strict Mode may cancel the
+        // first run; the remounted effect must still be able to finish, and a
+        // cancelled run must not leave the page stuck on "Checking session".
+        setIsAuthReady(true);
       }
     }
 

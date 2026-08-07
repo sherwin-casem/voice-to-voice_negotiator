@@ -1,3 +1,9 @@
+import { GlowArt } from "@/components/ui/GlowArt";
+import { cn } from "@/lib/format";
+import type { StaticImageData } from "next/image";
+
+import interviewHologram from "../../public/backgrounds/interview-hologram.png";
+
 export function FeaturePillarGrid({
   pillars,
 }: {
@@ -6,12 +12,26 @@ export function FeaturePillarGrid({
     title: string;
     body: string;
     bullets: ReadonlyArray<string>;
+    image?: { src: string | StaticImageData; width: number; height: number };
   }>;
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {pillars.map((pillar) => (
-        <article key={pillar.title} className="glass-panel flex flex-col p-6">
+        <article
+          key={pillar.title}
+          className={cn("glass-panel flex flex-col overflow-hidden p-6", pillar.image && "pt-0")}
+        >
+          {pillar.image ? (
+            <GlowArt
+              src={pillar.image.src}
+              width={pillar.image.width}
+              height={pillar.image.height}
+              sizes="(min-width: 1024px) 24rem, 100vw"
+              masked={false}
+              className="-mx-6 mb-5 h-52 w-[calc(100%+3rem)] max-w-none object-cover"
+            />
+          ) : null}
           <p className="text-section-label text-teal-400/90">{pillar.eyebrow}</p>
           <h3 className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{pillar.title}</h3>
           <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">{pillar.body}</p>
@@ -91,14 +111,16 @@ export function StatsBand({
   stats: ReadonlyArray<{ label: string; value: string }>;
 }) {
   return (
-    <dl className="glass-panel grid grid-cols-3 gap-4 p-6 sm:p-8">
-      {stats.map((stat) => (
-        <div key={stat.label} className="text-center sm:text-left">
-          <dt className="text-section-label">{stat.label}</dt>
-          <dd className="mt-1 text-2xl font-semibold text-teal-300 sm:text-3xl">{stat.value}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="glass-panel p-6 sm:p-8">
+      <dl className="grid grid-cols-3 gap-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="text-center sm:text-left">
+            <dt className="text-section-label">{stat.label}</dt>
+            <dd className="mt-1 text-2xl font-semibold text-teal-300 sm:text-3xl">{stat.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -110,15 +132,24 @@ export function ProblemSolutionBlock({
   solution: string;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <article className="glass-panel p-6">
-        <p className="text-section-label text-amber-300/90">The gap</p>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">{problem}</p>
-      </article>
-      <article className="glass-panel border-teal-500/20 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 p-6">
-        <p className="text-section-label text-teal-400/90">The VoxForge approach</p>
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">{solution}</p>
-      </article>
+    <div className="relative py-6 sm:py-10">
+      <GlowArt
+        src={interviewHologram}
+        width={interviewHologram.width}
+        height={interviewHologram.height}
+        sizes="(min-width: 640px) 36rem, 100vw"
+        className="absolute left-1/2 top-1/2 h-[180%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 opacity-40"
+      />
+      <div className="relative grid gap-6 lg:grid-cols-2">
+        <article className="glass-panel p-6">
+          <p className="text-section-label text-amber-300/90">The gap</p>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">{problem}</p>
+        </article>
+        <article className="glass-panel border-teal-500/20 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 p-6">
+          <p className="text-section-label text-teal-400/90">The VoxForge approach</p>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] sm:text-base">{solution}</p>
+        </article>
+      </div>
     </div>
   );
 }

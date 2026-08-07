@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from app.core.exceptions import MaxQuestionsReachedError
 from app.db.enums import InterviewSessionStatus, InterviewType
 from app.modules.interview.orchestrator import QuestionResult
 from app.modules.interview.schemas import QuestionRecord, SessionRecord
@@ -15,6 +16,8 @@ from app.modules.voice.protocol.types import (
     AUDIO_OUTPUT,
     INTERVIEWER_RESPONSE,
     INTERVIEWER_THINKING,
+    SESSION_ENDED,
+    SESSION_ERROR,
     TRANSCRIPT_FINAL,
     TRANSCRIPT_PARTIAL,
 )
@@ -87,6 +90,130 @@ async def test_voice_pipeline_processes_turn_without_blocking_event_loop() -> No
 
     orchestrator.submit_answer.assert_awaited_once()
     orchestrator.ask_next_question.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_voice_pipeline_ends_session_after_closing_question_answer() -> None:
+    """A closing question (should_end_session=True) must still accept the final
+    answer, then complete the session instead of asking another question."""
+    emitted: list[dict] = []
+
+    async def emit(message: dict) -> None:
+        emitted.append(message)
+
+    session_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    question_id = uuid.uuid4()
+
+    completed_session = SessionRecord(
+        id=session_id,
+        user_id=user_id,
+        status=InterviewSessionStatus.COMPLETED,
+        interview_type=InterviewType.BEHAVIORAL,
+        title="Test",
+        config_snapshot={},
+        question_count=3,
+        resume_id=None,
+        job_description_id=None,
+        started_at=datetime.now(UTC),
+        ended_at=datetime.now(UTC),
+        end_reason="interviewer_ended",
+    )
+
+    orchestrator = AsyncMock(spec=InterviewOrchestrator)
+    orchestrator.submit_answer = AsyncMock()
+    orchestrator.end_session = AsyncMock(return_value=completed_session)
+
+    pipeline = VoicePipeline(
+        orchestrator,
+        MockSpeechToTextProvider(),
+        MockTextToSpeechProvider(),
+        emit=emit,
+    )
+    pipeline.configure_audio_format(16000, "pcm_s16le", 1)
+
+    on_complete = AsyncMock()
+    pipeline.set_session_complete_callback(on_complete)
+
+    await pipeline.deliver_interviewer_turn(
+        session_id=session_id,
+        user_id=user_id,
+        question_id=question_id,
+        text="Finally, do you have any questions for us?",
+        topic_tag="closing",
+        should_end_session=True,
+    )
+
+    audio_b64 = base64.b64encode(b"final answer audio").decode("ascii")
+    await pipeline.append_audio_input(0, audio_b64)
+    await pipeline.process_speech_end(session_id=session_id, user_id=user_id, request_id="req-9")
+
+    orchestrator.submit_answer.assert_awaited_once()
+    orchestrator.ask_next_question.assert_not_awaited()
+    orchestrator.end_session.assert_awaited_once_with(
+        session_id, user_id, reason="interviewer_ended"
+    )
+    on_complete.assert_awaited_once()
+
+    event_types = [message["type"] for message in emitted]
+    assert SESSION_ENDED in event_types
+    ended = next(message for message in emitted if message["type"] == SESSION_ENDED)
+    assert ended["payload"]["status"] == "completed"
+    assert ended["payload"]["reason"] == "interviewer_ended"
+
+
+@pytest.mark.asyncio
+async def test_voice_pipeline_ends_session_when_max_questions_reached() -> None:
+    """If the interviewer never flags a closing question, hitting the question
+    budget must end the session gracefully rather than emit a conflict error."""
+    emitted: list[dict] = []
+
+    async def emit(message: dict) -> None:
+        emitted.append(message)
+
+    session_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    question_id = uuid.uuid4()
+
+    completed_session = SessionRecord(
+        id=session_id,
+        user_id=user_id,
+        status=InterviewSessionStatus.COMPLETED,
+        interview_type=InterviewType.BEHAVIORAL,
+        title="Test",
+        config_snapshot={},
+        question_count=3,
+        resume_id=None,
+        job_description_id=None,
+        started_at=datetime.now(UTC),
+        ended_at=datetime.now(UTC),
+        end_reason="max_questions_reached",
+    )
+
+    orchestrator = AsyncMock(spec=InterviewOrchestrator)
+    orchestrator.submit_answer = AsyncMock()
+    orchestrator.ask_next_question = AsyncMock(side_effect=MaxQuestionsReachedError())
+    orchestrator.end_session = AsyncMock(return_value=completed_session)
+
+    pipeline = VoicePipeline(
+        orchestrator,
+        MockSpeechToTextProvider(),
+        MockTextToSpeechProvider(),
+        emit=emit,
+    )
+    pipeline.set_current_question(question_id)
+    pipeline.configure_audio_format(16000, "pcm_s16le", 1)
+
+    audio_b64 = base64.b64encode(b"answer audio").decode("ascii")
+    await pipeline.append_audio_input(0, audio_b64)
+    await pipeline.process_speech_end(session_id=session_id, user_id=user_id, request_id="req-2")
+
+    orchestrator.end_session.assert_awaited_once_with(
+        session_id, user_id, reason="max_questions_reached"
+    )
+    event_types = [message["type"] for message in emitted]
+    assert SESSION_ENDED in event_types
+    assert SESSION_ERROR not in event_types
 
 
 @pytest.mark.asyncio

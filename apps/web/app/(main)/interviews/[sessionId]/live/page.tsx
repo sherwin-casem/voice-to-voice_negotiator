@@ -16,14 +16,12 @@ import { PracticeModeBadge } from "@/components/ui/Badge";
 import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { GlassPanel } from "@/components/ui/GlassPanel";
-import { MetricBar } from "@/components/ui/MetricBar";
 import { useAppContext } from "@/context/AppProvider";
 import { useInterviewTimer } from "@/hooks/useInterviewTimer";
-import { useLiveMetricsPreview } from "@/hooks/useLiveMetricsPreview";
 import { useSession } from "@/hooks/useSession";
 import { useVoiceInterview } from "@/hooks/useVoiceInterview";
 import { ApiClientError } from "@/lib/api-client";
-import { getSession } from "@/lib/interview-api";
+import { endSession, getSession } from "@/lib/interview-api";
 
 function ConnectionTipsPanel() {
   return (
@@ -35,50 +33,6 @@ function ConnectionTipsPanel() {
         <li>Find a quiet space with stable internet.</li>
         <li>Tap the mic button to record your answer.</li>
       </ul>
-    </GlassPanel>
-  );
-}
-
-function DemoMetricsPanel({
-  metrics,
-}: {
-  metrics: ReturnType<typeof useLiveMetricsPreview>["metrics"];
-}) {
-  return (
-    <GlassPanel className="hidden p-5 lg:block">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-section-label">Demo metrics</h2>
-        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
-          Preview
-        </span>
-      </div>
-      <p className="mb-4 text-xs text-[var(--text-dim)]">
-        Live evaluation metrics update during your session as you speak.
-      </p>
-      <div className="space-y-4">
-        <MetricBar
-          label={metrics.confidence.label}
-          value={metrics.confidence.value}
-          percent={metrics.confidence.percent}
-        />
-        <MetricBar
-          label={metrics.speakingPace.label}
-          value={metrics.speakingPace.value}
-          percent={metrics.speakingPace.percent}
-          variant="success"
-        />
-        <MetricBar
-          label={metrics.fillerWords.label}
-          value={metrics.fillerWords.value}
-          percent={metrics.fillerWords.percent}
-          variant="success"
-        />
-        <MetricBar
-          label={metrics.clarity.label}
-          value={metrics.clarity.value}
-          percent={metrics.clarity.percent}
-        />
-      </div>
     </GlassPanel>
   );
 }
@@ -123,8 +77,6 @@ export default function LiveInterviewPage() {
     },
     [loadedSession],
   );
-
-  const { metrics } = useLiveMetricsPreview();
 
   const refreshSession = useCallback(async () => {
     if (!sessionId) {
@@ -242,10 +194,20 @@ export default function LiveInterviewPage() {
       voice.disconnect();
       await refreshSession();
       router.push(`/interviews/${sessionId}/results`);
-    } catch (caught) {
-      setRefreshError(
-        caught instanceof Error ? caught.message : "Unable to end interview gracefully.",
-      );
+    } catch {
+      // The WebSocket end timed out or the socket was already gone. Fall back
+      // to ending the session over REST so it does not stay stuck active.
+      try {
+        await endSession(sessionId);
+        await refreshSession();
+        router.push(`/interviews/${sessionId}/results`);
+      } catch (restError) {
+        setRefreshError(
+          restError instanceof Error
+            ? restError.message
+            : "Unable to end interview gracefully.",
+        );
+      }
     } finally {
       setIsEnding(false);
     }
@@ -267,7 +229,12 @@ export default function LiveInterviewPage() {
   const canAnswer =
     voice.isInterviewStarted &&
     voice.connectionState === "connected" &&
-    (voice.isAwaitingAnswer || voice.interviewerState === "listening");
+    (voice.answerPhase === "ready" ||
+      voice.answerPhase === "recording" ||
+      voice.answerPhase === "paused" ||
+      // Barge-in: answering while the interviewer is still speaking cancels
+      // the rest of the question audio.
+      (voice.answerPhase === "locked" && voice.interviewerState === "speaking"));
 
   if (isLoading) {
     return <Spinner label="Loading live interview" />;
@@ -372,8 +339,6 @@ export default function LiveInterviewPage() {
         </section>
 
         <aside className="order-3 space-y-4 lg:col-span-3">
-          <DemoMetricsPanel metrics={metrics} />
-
           <GlassPanel className="p-5">
             <CountdownTimer elapsedSeconds={elapsedSeconds} targetMinutes={targetMinutes} />
           </GlassPanel>

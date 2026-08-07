@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from collections import deque
@@ -20,7 +21,15 @@ from app.modules.voice.protocol.types import (
     SESSION_READY,
     SESSION_START,
 )
+from app.modules.voice.ws import connection as connection_module
 from app.modules.voice.ws.connection import VoiceConnectionHandler
+
+
+async def _drain_grace_tasks() -> None:
+    """Await any reconnect-grace tasks spawned during handler shutdown."""
+    tasks = list(connection_module._grace_tasks)
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 class MockWebSocket:
@@ -33,6 +42,9 @@ class MockWebSocket:
         return None
 
     async def receive_text(self) -> str:
+        # Yield to the event loop so background turn tasks spawned by the
+        # handler get a chance to run, mirroring a real socket await.
+        await asyncio.sleep(0)
         if not self._incoming:
             raise WebSocketDisconnect(code=1000)
         return self._incoming.popleft()
@@ -45,7 +57,10 @@ class MockWebSocket:
 
 
 @pytest.mark.asyncio
-async def test_connection_handler_sends_ready_and_first_question() -> None:
+async def test_connection_handler_sends_ready_and_first_question(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(connection_module.settings, "ws_reconnect_grace_seconds", 0.0)
     session_id = uuid.uuid4()
     user_id = uuid.uuid4()
     question_id = uuid.uuid4()
@@ -109,25 +124,19 @@ async def test_connection_handler_sends_ready_and_first_question() -> None:
         ]
     )
 
-    emitted: list[dict] = []
-
-    async def emit(message: dict) -> None:
-        emitted.append(message)
-        await websocket.send_json(message)
-
     pipeline = VoicePipeline(
         orchestrator,
         MockSpeechToTextProvider(),
         MockTextToSpeechProvider(),
-        emit=emit,
     )
 
     handler = VoiceConnectionHandler(websocket, session_id, user_id, orchestrator, pipeline)
 
     await handler.run()
+    await _drain_grace_tasks()
 
     assert websocket.sent[0]["type"] == SESSION_READY
-    assert any(message["type"] == "interviewer.response" for message in emitted)
+    assert any(message["type"] == "interviewer.response" for message in websocket.sent)
     orchestrator.start.assert_awaited_once()
 
 
@@ -165,25 +174,18 @@ async def test_connection_handler_rejects_audio_before_session_start() -> None:
         ]
     )
 
-    emitted: list[dict] = []
-
-    async def emit(message: dict) -> None:
-        emitted.append(message)
-        await websocket.send_json(message)
-
     pipeline = VoicePipeline(
         orchestrator,
         MockSpeechToTextProvider(),
         MockTextToSpeechProvider(),
-        emit=emit,
     )
     handler = VoiceConnectionHandler(websocket, session_id, user_id, orchestrator, pipeline)
 
     await handler.run()
 
     assert websocket.sent[0]["type"] == SESSION_READY
-    assert emitted[-1]["type"] == SESSION_ERROR
-    assert emitted[-1]["payload"]["code"] == "NOT_STARTED"
+    assert websocket.sent[-1]["type"] == SESSION_ERROR
+    assert websocket.sent[-1]["payload"]["code"] == "NOT_STARTED"
 
 
 @pytest.mark.asyncio
@@ -247,7 +249,10 @@ async def test_connection_handler_ends_session_on_client_session_end() -> None:
 
 
 @pytest.mark.asyncio
-async def test_connection_handler_abandons_active_session_on_disconnect() -> None:
+async def test_connection_handler_abandons_active_session_on_disconnect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(connection_module.settings, "ws_reconnect_grace_seconds", 0.0)
     session_id = uuid.uuid4()
     user_id = uuid.uuid4()
 
@@ -341,6 +346,8 @@ async def test_connection_handler_abandons_active_session_on_disconnect() -> Non
     handler = VoiceConnectionHandler(websocket, session_id, user_id, orchestrator, pipeline)
 
     await handler.run()
+    # The abandon happens after the reconnect grace window (zeroed above).
+    await _drain_grace_tasks()
 
     orchestrator.abandon_session.assert_awaited_once_with(
         session_id,

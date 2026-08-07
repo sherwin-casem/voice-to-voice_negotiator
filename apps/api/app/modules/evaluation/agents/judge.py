@@ -9,6 +9,7 @@ from app.ai.prompts.evaluation.judge.v1.builder import (
     merge_judge_output,
 )
 from app.ai.providers.base import StructuredOutputProvider
+from app.ai.usage import consume_token_usage
 from app.ai.schemas.evaluation.judge import (
     EvidenceItem,
     JudgeEvaluationOutput,
@@ -87,6 +88,7 @@ class JudgeAgent:
                 latency_ms=int((time.perf_counter() - start_ms) * 1000),
                 started_at=started_at,
                 completed_at=completed_at,
+                token_usage=consume_token_usage(),
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception(

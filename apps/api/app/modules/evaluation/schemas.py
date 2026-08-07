@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.ai.types import TokenUsage
 from app.db.enums import AgentName, EvaluationRunStatus, EvaluationScope, InterviewType
 
 if TYPE_CHECKING:
@@ -68,6 +69,7 @@ class AgentExecutionResult:
     error_message: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
+    token_usage: TokenUsage | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -115,12 +117,15 @@ class EvaluationRunResult:
 
     @property
     def status(self) -> EvaluationRunStatus:
-        if self.judge_result and self.judge_result.status == EvaluationRunStatus.COMPLETED:
-            if any(result.succeeded for result in self.agent_results):
-                return EvaluationRunStatus.COMPLETED
-        if all(result.skipped for result in self.agent_results):
+        if self.agent_results and all(result.skipped for result in self.agent_results):
             return EvaluationRunStatus.SKIPPED
-        if any(result.succeeded for result in self.agent_results):
+        # A run is only COMPLETED when the judge produced a final evaluation;
+        # specialist output without a judge rollup is not a usable result.
+        if (
+            self.judge_result is not None
+            and self.judge_result.succeeded
+            and any(result.succeeded for result in self.agent_results)
+        ):
             return EvaluationRunStatus.COMPLETED
         return EvaluationRunStatus.FAILED
 

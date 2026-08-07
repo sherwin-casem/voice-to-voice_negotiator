@@ -2,13 +2,15 @@
 
 import { AuthEntryButtonLink, AuthEntryLink } from "@/components/auth/AuthEntryLink";
 import { HashLink } from "@/components/navigation/HashLink";
+import { GlowArt } from "@/components/ui/GlowArt";
 import { cn } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
 export function LandingHero() {
   return (
     <section className="relative flex min-h-[92vh] flex-col justify-center px-4 pb-20 pt-28 sm:px-6">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1fr_34rem]">
+        <div className="w-full max-w-3xl">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/10 px-3 py-1.5 text-xs font-medium text-teal-300">
           <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-teal-400 shadow-[0_0_8px_#14b8a6]" />
           AI voice interview studio
@@ -27,7 +29,7 @@ export function LandingHero() {
 
         <div className="mt-9 flex flex-wrap items-center gap-3">
           <AuthEntryButtonLink href={routes.createInterview} className="px-6 py-2.5 text-sm">
-            Start practicing →
+            Get started →
           </AuthEntryButtonLink>
           <HashLink
             section="flow"
@@ -68,6 +70,16 @@ export function LandingHero() {
             </dd>
           </div>
         </dl>
+        </div>
+
+        <GlowArt
+          src="/backgrounds/ai-core-hero.png"
+          width={1024}
+          height={721}
+          sizes="(min-width: 1024px) 34rem, 0px"
+          masked={false}
+          className="hidden w-full scale-110 justify-self-center lg:block [filter:brightness(0.88)_contrast(1.3)] [mask-image:radial-gradient(ellipse_62%_62%_at_50%_50%,#000_38%,transparent_80%)]"
+        />
       </div>
     </section>
   );

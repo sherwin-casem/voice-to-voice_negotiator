@@ -5,13 +5,28 @@ from sqlalchemy import inspect as sa_inspect
 
 from app.config import settings
 from app.core.exceptions import UnauthorizedError
+from app.core.rate_limit import rate_limit_dependency
 from app.db.models.user import User
 from app.modules.auth.deps import get_auth_service, get_current_user
-from app.modules.auth.service import AuthService
-from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+from app.modules.auth.service import AuthService, create_ws_ticket
+from app.schemas.auth import (
+    AuthResponse,
+    LoginRequest,
+    RegisterRequest,
+    UserResponse,
+    WsTicketRequest,
+    WsTicketResponse,
+)
 from app.schemas.common import ApiResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+_credential_rate_limit = rate_limit_dependency(
+    "auth-credentials", settings.auth_rate_limit_per_minute, 60.0
+)
+_refresh_rate_limit = rate_limit_dependency(
+    "auth-refresh", settings.auth_rate_limit_per_minute * 3, 60.0
+)
 
 
 def _user_response(user: User) -> UserResponse:
@@ -43,7 +58,11 @@ def _clear_refresh_cookie(response: Response) -> None:
     response.delete_cookie(key=settings.auth_cookie_name, path="/")
 
 
-@router.post("/register", response_model=ApiResponse[AuthResponse])
+@router.post(
+    "/register",
+    response_model=ApiResponse[AuthResponse],
+    dependencies=[Depends(_credential_rate_limit)],
+)
 async def register(
     body: RegisterRequest,
     response: Response,
@@ -54,7 +73,11 @@ async def register(
     return ApiResponse(data=_auth_response(user, access_token))
 
 
-@router.post("/login", response_model=ApiResponse[AuthResponse])
+@router.post(
+    "/login",
+    response_model=ApiResponse[AuthResponse],
+    dependencies=[Depends(_credential_rate_limit)],
+)
 async def login(
     body: LoginRequest,
     response: Response,
@@ -77,7 +100,11 @@ async def logout(
     return ApiResponse(data={"success": True})
 
 
-@router.post("/refresh", response_model=ApiResponse[AuthResponse])
+@router.post(
+    "/refresh",
+    response_model=ApiResponse[AuthResponse],
+    dependencies=[Depends(_refresh_rate_limit)],
+)
 async def refresh_tokens(
     request: Request,
     response: Response,
@@ -94,3 +121,22 @@ async def refresh_tokens(
 @router.get("/me", response_model=ApiResponse[UserResponse])
 async def get_me(current_user: User = Depends(get_current_user)) -> ApiResponse[UserResponse]:
     return ApiResponse(data=_user_response(current_user))
+
+
+@router.post(
+    "/ws-ticket",
+    response_model=ApiResponse[WsTicketResponse],
+    dependencies=[Depends(_refresh_rate_limit)],
+)
+async def issue_ws_ticket(
+    body: WsTicketRequest,
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[WsTicketResponse]:
+    """Issue a short-lived, session-bound ticket for the voice WebSocket handshake.
+
+    Keeps long-lived bearer tokens out of WebSocket URLs (and proxy logs).
+    """
+    ticket = create_ws_ticket(current_user.id, body.session_id)
+    return ApiResponse(
+        data=WsTicketResponse(ticket=ticket, expires_in_seconds=settings.ws_ticket_ttl_seconds)
+    )

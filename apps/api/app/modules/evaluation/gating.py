@@ -1,4 +1,4 @@
-from app.db.enums import InterviewType
+from app.db.enums import EvaluationScope, InterviewType
 
 _TECHNICAL_TYPES = frozenset({InterviewType.TECHNICAL, InterviewType.SYSTEM_DESIGN})
 _BEHAVIORAL_TYPES = frozenset(
@@ -26,5 +26,7 @@ def should_run_relevance(_interview_type: InterviewType) -> tuple[bool, str | No
     return True, None
 
 
-def should_run_hiring_manager(_interview_type: InterviewType) -> tuple[bool, str | None]:
+def should_run_hiring_manager(scope: EvaluationScope) -> tuple[bool, str | None]:
+    if scope != EvaluationScope.SESSION:
+        return False, "Hiring-manager assessment applies to whole sessions, not single answers"
     return True, None

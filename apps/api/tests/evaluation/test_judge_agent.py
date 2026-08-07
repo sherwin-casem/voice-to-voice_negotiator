@@ -60,7 +60,9 @@ async def test_judge_handles_failed_evaluator(judge: JudgeAgent) -> None:
     output = result.output
     assert isinstance(output, JudgeEvaluationOutput)
     assert result.status == EvaluationRunStatus.COMPLETED
-    assert output.dimension_scores.communication == 50.0
+    # Failed communication specialist is excluded from scoring, not neutralized.
+    assert output.dimension_scores.communication is None
+    assert "communication" not in output.weights_applied
 
 
 @pytest.mark.asyncio
@@ -140,4 +142,4 @@ async def test_judge_output_contains_required_fields(judge: JudgeAgent) -> None:
     assert output.strongest_dimensions
     assert output.weakest_dimensions
     assert output.weights_applied
-    assert output.scoring_methodology_version == "1.0"
+    assert output.scoring_methodology_version == "1.1"

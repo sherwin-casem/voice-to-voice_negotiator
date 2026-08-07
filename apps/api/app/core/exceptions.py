@@ -24,6 +24,13 @@ class ConflictError(AppError):
         super().__init__("CONFLICT", message, status_code=409)
 
 
+class MaxQuestionsReachedError(AppError):
+    """The configured question budget is exhausted; the session should end."""
+
+    def __init__(self, message: str = "Maximum question count reached") -> None:
+        super().__init__("MAX_QUESTIONS_REACHED", message, status_code=409)
+
+
 class InvalidStateError(AppError):
     def __init__(self, message: str) -> None:
         super().__init__("INVALID_STATE", message, status_code=409)
@@ -37,3 +44,8 @@ class UnauthorizedError(AppError):
 class ForbiddenError(AppError):
     def __init__(self, message: str = "Forbidden") -> None:
         super().__init__("FORBIDDEN", message, status_code=403)
+
+
+class RateLimitedError(AppError):
+    def __init__(self, message: str = "Too many requests, please retry later") -> None:
+        super().__init__("RATE_LIMITED", message, status_code=429)

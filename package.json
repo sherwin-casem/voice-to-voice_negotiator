@@ -6,6 +6,7 @@
     "packages/shared"
   ],
   "scripts": {
+    "dev:api": "uv run --directory apps/api python run_dev.py",
     "dev:web": "npm run dev --workspace @voice/web",
     "build:web": "npm run build --workspace @voice/web",
     "lint:web": "npm run lint --workspace @voice/web",

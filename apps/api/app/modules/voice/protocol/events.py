@@ -1,13 +1,14 @@
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.modules.voice.protocol.types import (
     AUDIO_INPUT,
     AUDIO_OUTPUT,
     INTERVIEWER_RESPONSE,
     INTERVIEWER_THINKING,
+    OUTPUT_CANCEL,
     SESSION_END,
     SESSION_ENDED,
     SESSION_ERROR,
@@ -41,7 +42,6 @@ class AudioInputPayload(BaseModel):
     seq: int = Field(ge=0)
     data: str = Field(min_length=1, description="Base64-encoded audio chunk")
     timestamp_ms: int = Field(ge=0)
-    is_final_chunk: bool = False
 
     @field_validator("data")
     @classmethod
@@ -57,6 +57,10 @@ class SpeechEndPayload(BaseModel):
 
 class SessionEndPayload(BaseModel):
     reason: str = Field(default="user_ended", max_length=100)
+
+
+class OutputCancelPayload(BaseModel):
+    """Barge-in request; no fields required."""
 
 
 class SessionReadyPayload(BaseModel):
@@ -89,10 +93,16 @@ class InterviewerResponsePayload(BaseModel):
 
 class AudioOutputPayload(BaseModel):
     seq: int = Field(ge=0)
-    data: str = Field(min_length=1, description="Base64-encoded audio chunk")
+    data: str = Field(description="Base64-encoded audio chunk; may be empty on a final marker")
     encoding: str = "pcm_s16le"
     sample_rate: int = 16000
     is_final: bool = False
+
+    @model_validator(mode="after")
+    def validate_data_presence(self) -> "AudioOutputPayload":
+        if not self.data and not self.is_final:
+            raise ValueError("data must not be empty on non-final audio chunks")
+        return self
 
 
 class SessionErrorPayload(BaseModel):
@@ -111,6 +121,7 @@ CLIENT_PAYLOAD_MODELS: dict[str, type[BaseModel]] = {
     AUDIO_INPUT: AudioInputPayload,
     SPEECH_END: SpeechEndPayload,
     SESSION_END: SessionEndPayload,
+    OUTPUT_CANCEL: OutputCancelPayload,
 }
 
 SERVER_PAYLOAD_MODELS: dict[str, type[BaseModel]] = {

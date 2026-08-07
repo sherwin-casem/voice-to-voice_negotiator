@@ -1,11 +1,12 @@
 import { routes } from "@/lib/routes";
+import agentCubes from "../../public/backgrounds/agent-cubes.png";
 
 export const FEATURES_HERO = {
   eyebrow: "Product overview",
   title: "Coach how you speak, not just what you write.",
   description:
     "VoxForge is a voice-first interview studio. Practice realistic mock interviews out loud, get multi-agent evaluation across seven dimensions, and track improvement over time — built for candidates who want to perform under real conversational pressure.",
-  primaryCta: { label: "Start practicing", href: routes.createInterview },
+  primaryCta: { label: "Get started", href: routes.createInterview },
   secondaryCta: { label: "View evaluation", href: routes.previewResults },
 } as const;
 
@@ -29,6 +30,7 @@ export const EXPANDED_PILLARS = [
       "Dynamic follow-ups based on your answers",
       "Resume and job-description aware questioning",
     ],
+    image: { src: "/backgrounds/voice-crystal.png", width: 298, height: 223 },
   },
   {
     eyebrow: "Multi-agent evaluation",
@@ -40,6 +42,7 @@ export const EXPANDED_PILLARS = [
       "Per-answer evaluations and suggested rewrites",
       "Actionable coaching recommendations for your next session",
     ],
+    image: { src: agentCubes, width: 206, height: 146 },
   },
   {
     eyebrow: "Longitudinal coaching",
@@ -51,6 +54,7 @@ export const EXPANDED_PILLARS = [
       "Dimension trend comparisons over time",
       "Focused prep based on recurring weak spots",
     ],
+    image: { src: "/backgrounds/progress-orb.png", width: 329, height: 199 },
   },
 ] as const;
 
@@ -113,10 +117,3 @@ export const FEATURES_STATS = [
   { label: "Eval dimensions", value: "7" },
   { label: "Voice-first", value: "100%" },
 ] as const;
-
-export const FEATURES_CTA = {
-  title: "Ready to practice out loud?",
-  description: "Start a session in minutes, or browse prep guides in Resources.",
-  primaryCta: { label: "Start practicing", href: routes.createInterview },
-  secondaryCta: { label: "Browse resources", href: routes.resources },
-} as const;

@@ -136,7 +136,9 @@ async def test_refresh_rotates_token(auth_service: AuthService, auth_repository:
         token_hash=hash_refresh_token(refresh_token),
         expires_at=datetime.now(UTC) + timedelta(days=1),
     )
-    auth_repository.get_refresh_token.return_value = record
+    record.revoked_at = None
+    auth_repository.get_refresh_token_any.return_value = record
+    auth_repository.revoke_refresh_token_atomic.return_value = True
     auth_repository.get_user_by_id.return_value = user
 
     refreshed_user, access_token, new_refresh = await auth_service.refresh(refresh_token)
@@ -144,12 +146,12 @@ async def test_refresh_rotates_token(auth_service: AuthService, auth_repository:
     assert refreshed_user is user
     assert access_token
     assert new_refresh
-    auth_repository.revoke_refresh_token.assert_awaited_once_with(refresh_token)
+    auth_repository.revoke_refresh_token_atomic.assert_awaited_once_with(refresh_token)
     auth_repository.store_refresh_token.assert_awaited_once()
 
 
-async def test_refresh_rejects_revoked_token(auth_service: AuthService, auth_repository: AsyncMock) -> None:
-    auth_repository.get_refresh_token.return_value = None
+async def test_refresh_rejects_unknown_token(auth_service: AuthService, auth_repository: AsyncMock) -> None:
+    auth_repository.get_refresh_token_any.return_value = None
 
     with pytest.raises(UnauthorizedError):
         await auth_service.refresh("missing-token")
@@ -162,10 +164,55 @@ async def test_refresh_rejects_expired_token(auth_service: AuthService, auth_rep
         token_hash=hash_refresh_token("expired"),
         expires_at=datetime.now(UTC) - timedelta(minutes=1),
     )
-    auth_repository.get_refresh_token.return_value = record
+    record.revoked_at = None
+    auth_repository.get_refresh_token_any.return_value = record
 
     with pytest.raises(UnauthorizedError):
         await auth_service.refresh("expired")
+
+
+async def test_refresh_reuse_revokes_all_sessions(
+    auth_service: AuthService, auth_repository: AsyncMock
+) -> None:
+    """Presenting an already-rotated token must nuke the whole token family."""
+    user_id = uuid.uuid4()
+    record = RefreshToken(
+        id=uuid.uuid4(),
+        user_id=user_id,
+        token_hash=hash_refresh_token("reused"),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+    )
+    record.revoked_at = datetime.now(UTC) - timedelta(minutes=5)
+    auth_repository.get_refresh_token_any.return_value = record
+
+    with pytest.raises(UnauthorizedError):
+        await auth_service.refresh("reused")
+
+    auth_repository.revoke_all_for_user.assert_awaited_once_with(user_id)
+    auth_repository.store_refresh_token.assert_not_awaited()
+
+
+async def test_refresh_concurrent_rotation_treated_as_reuse(
+    auth_service: AuthService, auth_repository: AsyncMock
+) -> None:
+    """If another request won the atomic rotation race, treat this one as reuse."""
+    user = _user()
+    record = RefreshToken(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        token_hash=hash_refresh_token("racing"),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+    )
+    record.revoked_at = None
+    auth_repository.get_refresh_token_any.return_value = record
+    auth_repository.get_user_by_id.return_value = user
+    auth_repository.revoke_refresh_token_atomic.return_value = False
+
+    with pytest.raises(UnauthorizedError):
+        await auth_service.refresh("racing")
+
+    auth_repository.revoke_all_for_user.assert_awaited_once_with(user.id)
+    auth_repository.store_refresh_token.assert_not_awaited()
 
 
 async def test_logout_revokes_refresh_token(auth_service: AuthService, auth_repository: AsyncMock) -> None:

@@ -112,7 +112,6 @@ async function main() {
     seq: 0,
     data: fakePcmBase64(300),
     timestamp_ms: Date.now(),
-    is_final_chunk: false,
   });
   send(socket, "speech.end", { timestamp_ms: Date.now() });
 
@@ -126,8 +125,8 @@ async function main() {
   console.log("interviewer.thinking received");
 
   send(socket, "session.end", { reason: "user_ended" });
-  const ended = await waitForEvent(socket, "session.end");
-  console.log("session.end:", ended.payload.status);
+  const ended = await waitForEvent(socket, "session.ended");
+  console.log("session.ended:", ended.payload.status);
 
   socket.close();
   console.log("Voice WebSocket smoke test passed.");

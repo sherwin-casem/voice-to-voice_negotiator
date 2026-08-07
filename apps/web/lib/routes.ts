@@ -31,6 +31,20 @@ export function registerWithNext(next: string): string {
   return `${routes.register}?next=${encodeURIComponent(next)}`;
 }
 
+/**
+ * Restrict post-auth redirect targets to same-origin paths so a crafted
+ * `?next=` cannot send users to an external site (open redirect).
+ */
+export function sanitizeNextPath(next: string | null | undefined, fallback: string): string {
+  if (!next) {
+    return fallback;
+  }
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
+    return fallback;
+  }
+  return next;
+}
+
 export function resolveAuthEntryHref(targetHref: string, isAuthenticated: boolean): string {
   if (isAuthenticated || !isProtectedAppRoute(targetHref)) {
     return targetHref;
@@ -100,6 +114,6 @@ export const FEATURE_CARDS = [
 export const SITE_NAV_LINKS = [
   { label: "Features", href: routes.features },
   { label: "Evaluations", href: routes.evaluations },
-  { label: "Pricing", href: routes.pricing },
   { label: "Resources", href: routes.resources },
+  { label: "Pricing", href: routes.pricing },
 ] as const;

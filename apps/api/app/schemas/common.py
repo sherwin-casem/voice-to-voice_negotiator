@@ -18,5 +18,5 @@ class ApiResponse(BaseModel, Generic[T]):
 
 class HealthData(BaseModel):
     status: Literal["ok", "degraded"] = Field(examples=["ok"])
-    database: Literal["ok", "error"] = Field(examples=["ok"])
+    database: Literal["ok", "error", "not_checked"] = Field(examples=["ok"])
     environment: str = Field(examples=["development"])

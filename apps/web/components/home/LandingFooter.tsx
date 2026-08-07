@@ -27,7 +27,7 @@ export function LandingFooter() {
                 View results
               </ButtonLink>
               <ButtonLink href={routes.createInterview} className="justify-center px-6 py-2.5">
-                Start practicing →
+                Get started →
               </ButtonLink>
             </div>
           </div>

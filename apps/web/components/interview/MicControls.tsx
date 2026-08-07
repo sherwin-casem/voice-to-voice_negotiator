@@ -36,10 +36,10 @@ export function MicControls({
           {permissionDenied
             ? "Mic blocked"
             : isRecording
-              ? "Stop"
+              ? "Pause"
               : isEnabled
-                ? "Start mic"
-                : "Enable mic"}
+                ? "Resume mic"
+                : "Start answer"}
         </Button>
         <Button
           onClick={onFinishAnswer}
@@ -49,6 +49,11 @@ export function MicControls({
           Finish answer
         </Button>
       </div>
+      {isRecording ? (
+        <p className="mt-2 text-center text-xs text-[var(--text-dim)]">
+          Pause keeps your answer open. Finish answer sends it to the interviewer.
+        </p>
+      ) : null}
       {permissionDenied ? (
         <p className="mt-2 text-center text-xs text-red-400" role="alert">
           Microphone access denied. Check browser permissions.

@@ -41,6 +41,18 @@ uv run --directory apps/api alembic upgrade head
 
 ## Development
 
+On Windows, use the dev entrypoint so psycopg async gets a compatible event loop:
+
+```bash
+# Recommended (all platforms; required on Windows)
+uv run --directory apps/api python run_dev.py
+
+# From repo root
+npm run dev:api
+```
+
+Linux/macOS may also use uvicorn directly:
+
 ```bash
 uv run --directory apps/api uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```

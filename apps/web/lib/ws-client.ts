@@ -20,7 +20,7 @@ export class InterviewWebSocket {
 
   constructor(
     private readonly sessionId: string,
-    private readonly accessToken: string,
+    private readonly getTicket: () => Promise<string>,
     private readonly options: InterviewWebSocketOptions = {},
   ) {}
 
@@ -32,7 +32,7 @@ export class InterviewWebSocket {
     this.onConnectionChange = onConnectionChange ?? null;
     this.intentionalClose = false;
     this.reconnectAttempts = 0;
-    this.openSocket(false);
+    void this.openSocket(false);
   }
 
   send(type: string, payload: Record<string, unknown>, requestId?: string): boolean {
@@ -61,14 +61,36 @@ export class InterviewWebSocket {
     return this.socket?.readyState === WebSocket.OPEN;
   }
 
-  private openSocket(isReconnect: boolean): void {
+  private async openSocket(isReconnect: boolean): Promise<void> {
     if (this.intentionalClose) {
       return;
     }
 
     this.onConnectionChange?.(false, isReconnect);
 
-    const path = API_ROUTES.voiceWebSocket(this.sessionId, this.accessToken);
+    let ticket: string;
+    try {
+      // A fresh ticket is required per attempt: tickets are single-purpose
+      // and expire within a minute.
+      ticket = await this.getTicket();
+    } catch {
+      this.onMessage?.({
+        type: "session.error",
+        payload: {
+          code: "AUTH_ERROR",
+          message: "Unable to authenticate the voice connection.",
+          recoverable: true,
+        },
+      });
+      this.scheduleReconnect();
+      return;
+    }
+
+    if (this.intentionalClose) {
+      return;
+    }
+
+    const path = API_ROUTES.voiceWebSocket(this.sessionId, ticket);
     this.socket = new WebSocket(getWebSocketUrl(path));
 
     this.socket.onopen = () => {
@@ -138,7 +160,7 @@ export class InterviewWebSocket {
 
     this.clearReconnectTimer();
     this.reconnectTimer = setTimeout(() => {
-      this.openSocket(true);
+      void this.openSocket(true);
     }, delay);
   }
 

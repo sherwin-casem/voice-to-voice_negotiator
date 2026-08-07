@@ -217,6 +217,65 @@ async def test_end_session_from_active_sets_completed(
 
 
 @pytest.mark.asyncio
+async def test_end_session_with_answers_enters_completing(
+    orchestrator: InterviewOrchestrator,
+    repository: AsyncMock,
+) -> None:
+    """Sessions with answered questions hand off to the evaluation pipeline."""
+    interview_session = _make_interview_session(
+        status=InterviewSessionStatus.ACTIVE,
+        question_count=1,
+    )
+    question = InterviewQuestion(
+        id=uuid.uuid4(),
+        session_id=interview_session.id,
+        sequence_num=1,
+        question_text="Question?",
+        asked_at=datetime.now(UTC),
+        is_follow_up=False,
+        agent_metadata={},
+    )
+    question.answer = MagicMock()
+    interview_session.questions = [question]
+    repository.get_session_for_user.return_value = interview_session
+    repository.update_session_status.return_value = _session_record(
+        status=InterviewSessionStatus.COMPLETING,
+    )
+
+    result = await orchestrator.end_session(
+        interview_session.id,
+        interview_session.user_id,
+        reason="user_ended",
+    )
+
+    repository.update_session_status.assert_awaited_once_with(
+        interview_session,
+        InterviewSessionStatus.COMPLETING,
+        end_reason="user_ended",
+    )
+    assert result.status == InterviewSessionStatus.COMPLETING
+
+
+@pytest.mark.asyncio
+async def test_end_session_while_completing_is_noop(
+    orchestrator: InterviewOrchestrator,
+    repository: AsyncMock,
+) -> None:
+    """A second end request must not race the in-flight evaluation."""
+    interview_session = _make_interview_session(status=InterviewSessionStatus.COMPLETING)
+    repository.get_session_for_user.return_value = interview_session
+
+    result = await orchestrator.end_session(
+        interview_session.id,
+        interview_session.user_id,
+        reason="user_ended",
+    )
+
+    repository.update_session_status.assert_not_awaited()
+    assert result.status == InterviewSessionStatus.COMPLETING
+
+
+@pytest.mark.asyncio
 async def test_submit_answer_persists_answer(
     orchestrator: InterviewOrchestrator,
     repository: AsyncMock,

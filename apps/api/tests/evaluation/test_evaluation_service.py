@@ -1,7 +1,7 @@
 import pytest
 
 from app.ai.schemas.evaluation.communication import CommunicationEvaluationOutput
-from app.db.enums import AgentName, EvaluationRunStatus, InterviewType
+from app.db.enums import AgentName, EvaluationRunStatus, EvaluationScope, InterviewType
 from app.modules.evaluation.agents.coach import ImprovementCoachAgent
 from app.modules.evaluation.agents.judge import JudgeAgent
 from app.modules.evaluation.factory import build_evaluation_service
@@ -15,6 +15,7 @@ def _sample_context() -> EvaluationContext:
     return EvaluationContext(
         interview_type=InterviewType.TECHNICAL,
         difficulty="senior",
+        scope=EvaluationScope.SESSION,
         target_role="Staff Engineer",
         question_text="How would you debug elevated API latency?",
         answer_text="I would inspect metrics, traces, and recent deploys before narrowing to a bottleneck.",

@@ -1,19 +1,40 @@
 from uuid import UUID
 
-from fastapi import Query, WebSocket, WebSocketException, status
+from fastapi import Query, WebSocketException, status
 
-from app.modules.auth.service import decode_access_token
+from app.config import settings
+from app.core.exceptions import UnauthorizedError
+from app.modules.auth.service import decode_ws_ticket
 
 
 def parse_ws_user_id(
-    access_token: str | None = Query(default=None, alias="access_token"),
+    session_id: UUID,
+    ticket: str | None = Query(default=None, alias="ticket"),
     user_id: str | None = Query(default=None, alias="user_id"),
 ) -> UUID:
-    if access_token:
-        payload = decode_access_token(access_token)
+    """Authenticate a voice WebSocket connection.
+
+    Production path: a short-lived, session-bound ticket issued by
+    POST /auth/ws-ticket. The bare ``user_id`` query parameter is a
+    development-only convenience, gated the same way as the REST
+    ``X-User-Id`` header.
+    """
+    if ticket:
+        try:
+            payload = decode_ws_ticket(ticket)
+        except UnauthorizedError as exc:
+            raise WebSocketException(
+                code=status.WS_1008_POLICY_VIOLATION,
+                reason=exc.message,
+            ) from exc
+        if payload.get("sid") != str(session_id):
+            raise WebSocketException(
+                code=status.WS_1008_POLICY_VIOLATION,
+                reason="Ticket does not match this session",
+            )
         return UUID(payload["sub"])
 
-    if user_id:
+    if settings.allow_dev_user_header and settings.is_development and user_id:
         try:
             return UUID(user_id)
         except ValueError as exc:

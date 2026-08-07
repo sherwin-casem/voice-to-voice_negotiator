@@ -68,7 +68,7 @@ def _relevance_gating(context: EvaluationContext) -> tuple[bool, str | None]:
 
 
 def _hiring_manager_gating(context: EvaluationContext) -> tuple[bool, str | None]:
-    return should_run_hiring_manager(context.interview_type)
+    return should_run_hiring_manager(context.scope)
 
 
 def build_specialist_evaluators(

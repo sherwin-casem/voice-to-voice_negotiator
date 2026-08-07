@@ -8,8 +8,9 @@ import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label } from "@/components/ui/FormControls";
+import { GlowArt } from "@/components/ui/GlowArt";
 import { useAppContext } from "@/context/AppProvider";
-import { registerWithNext, routes } from "@/lib/routes";
+import { registerWithNext, routes, sanitizeNextPath } from "@/lib/routes";
 
 function LoginForm() {
   const router = useRouter();
@@ -20,7 +21,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nextPath = searchParams.get("next") ?? routes.createInterview;
+  const nextPath = sanitizeNextPath(searchParams.get("next"), routes.createInterview);
 
   useEffect(() => {
     if (isAuthReady && isAuthenticated) {
@@ -93,7 +94,14 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <>
+    <div className="relative">
+      <GlowArt
+        src="/backgrounds/voice-crystal.png"
+        width={298}
+        height={223}
+        sizes="24rem"
+        className="absolute left-1/2 top-1/2 w-96 max-w-none -translate-x-1/2 -translate-y-1/2 opacity-40"
+      />
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-semibold text-[var(--text-primary)]">Welcome back</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
@@ -108,6 +116,6 @@ export default function LoginPage() {
           Evaluations and interview practice require an account so your sessions stay private.
         </Alert>
       </div>
-    </>
+    </div>
   );
 }

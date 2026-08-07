@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { fetchWsTicket } from "@/lib/auth-api";
 import { InterviewWebSocket } from "@/lib/ws-client";
 import { PcmCapture } from "@/lib/voice/pcm-capture";
 import { PcmStreamPlayer } from "@/lib/voice/pcm-player";
@@ -28,6 +29,18 @@ export interface VoiceInterviewOptions {
   onTurnComplete?: () => void;
 }
 
+/**
+ * Explicit answer lifecycle so the mic can never be armed while a previous
+ * answer is still being processed or the interviewer is still audible.
+ *
+ * locked -> ready (interviewer audio finished playing)
+ * ready -> recording (user starts mic)
+ * recording <-> paused (user pauses/resumes within one answer)
+ * recording | paused -> submitted (user finishes the answer)
+ * submitted -> locked (next question arrives)
+ */
+export type AnswerPhase = "locked" | "ready" | "recording" | "paused" | "submitted";
+
 export interface VoiceInterviewState {
   connectionState: WsConnectionState;
   interviewerState: InterviewerState;
@@ -42,6 +55,7 @@ export interface VoiceInterviewState {
   permissionDenied: boolean;
   audioLevel: number;
   isAwaitingAnswer: boolean;
+  answerPhase: AnswerPhase;
   connect: () => void;
   disconnect: () => void;
   startInterview: () => Promise<void>;
@@ -69,10 +83,17 @@ export function useVoiceInterview(
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [isAwaitingAnswer, setIsAwaitingAnswer] = useState(false);
+  const [answerPhase, setAnswerPhase] = useState<AnswerPhase>("locked");
 
   const clientRef = useRef<InterviewWebSocket | null>(null);
   const captureRef = useRef<PcmCapture | null>(null);
   const playerRef = useRef<PcmStreamPlayer | null>(null);
+  const playbackChainRef = useRef<Promise<void>>(Promise.resolve());
+  const isPlaybackActiveRef = useRef(false);
+  // After a barge-in, drop the remaining audio chunks of the cancelled
+  // utterance until the next interviewer response begins.
+  const dropAudioOutputRef = useRef(false);
+  const answerPhaseRef = useRef<AnswerPhase>("locked");
   const audioSeqRef = useRef(0);
   const questionCountRef = useRef(0);
   const partialCandidateIdRef = useRef<string | null>(null);
@@ -85,6 +106,27 @@ export function useVoiceInterview(
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
+
+  const transitionAnswerPhase = useCallback((phase: AnswerPhase) => {
+    answerPhaseRef.current = phase;
+    setAnswerPhase(phase);
+  }, []);
+
+  const handlePlaybackDrained = useCallback(() => {
+    isPlaybackActiveRef.current = false;
+    setInterviewerState("idle");
+    setIsAwaitingAnswer(true);
+    transitionAnswerPhase("ready");
+  }, [transitionAnswerPhase]);
+
+  const ensurePlayer = useCallback(() => {
+    if (!playerRef.current) {
+      const player = new PcmStreamPlayer();
+      player.onDrained(handlePlaybackDrained);
+      playerRef.current = player;
+    }
+    return playerRef.current;
+  }, [handlePlaybackDrained]);
 
   const appendSystemMessage = useCallback((text: string) => {
     setTranscript((previous) => [
@@ -182,6 +224,18 @@ export function useVoiceInterview(
             questionCountRef.current,
           );
           appendSystemMessage("Voice session connected.");
+          if (isInterviewStartedRef.current) {
+            // Reconnected mid-interview: re-send session.start so the server
+            // resumes by re-delivering the open question.
+            clientRef.current?.send(WS_EVENTS.client.sessionStart, {
+              session_id: sessionId,
+              audio_format: {
+                sample_rate: VOICE_SAMPLE_RATE,
+                encoding: VOICE_ENCODING,
+                channels: VOICE_CHANNELS,
+              },
+            });
+          }
           break;
         }
         case WS_EVENTS.server.interviewerResponse: {
@@ -194,23 +248,39 @@ export function useVoiceInterview(
           setIsInterviewStarted(true);
           isInterviewStartedRef.current = true;
           setIsAwaitingAnswer(false);
+          transitionAnswerPhase("locked");
+          dropAudioOutputRef.current = false;
+          // New question, new turn: audio seq restarts on the server side too.
+          audioSeqRef.current = 0;
           break;
         }
         case WS_EVENTS.server.audioOutput: {
-          const player = playerRef.current ?? new PcmStreamPlayer();
-          playerRef.current = player;
-          void player.resume().then(() => {
-            player.enqueueBase64Chunk(
-              String(payload.data ?? ""),
-              Number(payload.sample_rate ?? VOICE_SAMPLE_RATE),
-            );
-            if (payload.is_final === true) {
-              setInterviewerState("idle");
-              setIsAwaitingAnswer(true);
-            } else {
-              setInterviewerState("speaking");
-            }
-          });
+          if (dropAudioOutputRef.current) {
+            break;
+          }
+          const player = ensurePlayer();
+          const data = String(payload.data ?? "");
+          const sampleRate = Number(payload.sample_rate ?? VOICE_SAMPLE_RATE);
+          const isFinal = payload.is_final === true;
+          isPlaybackActiveRef.current = true;
+          // Chain chunk handling so out-of-order resume() resolutions cannot
+          // reorder playback or flip the speaking state after the final chunk.
+          playbackChainRef.current = playbackChainRef.current
+            .then(async () => {
+              await player.resume();
+              if (data.length > 0) {
+                player.enqueueBase64Chunk(data, sampleRate);
+              }
+              if (isFinal) {
+                // The answer unlocks when playback drains, not on receipt.
+                player.markFinalChunkReceived();
+              } else {
+                setInterviewerState("speaking");
+              }
+            })
+            .catch(() => {
+              // Playback failures should not break the message loop.
+            });
           break;
         }
         case WS_EVENTS.server.transcriptPartial:
@@ -235,7 +305,7 @@ export function useVoiceInterview(
           }
           break;
         }
-        case WS_EVENTS.server.sessionEnd: {
+        case WS_EVENTS.server.sessionEnded: {
           allowReconnectRef.current = false;
           appendSystemMessage(`Session ended (${String(payload.reason ?? "ended")}).`);
           optionsRef.current.onSessionEnded?.(
@@ -247,6 +317,7 @@ export function useVoiceInterview(
           endInterviewRejectRef.current = null;
           setInterviewerState("idle");
           setIsAwaitingAnswer(false);
+          transitionAnswerPhase("locked");
           setIsInterviewStarted(false);
           isInterviewStartedRef.current = false;
           clientRef.current?.disconnect();
@@ -256,7 +327,15 @@ export function useVoiceInterview(
           break;
       }
     },
-    [appendInterviewerMessage, appendSystemMessage, setCandidateFinal, setCandidatePartial],
+    [
+      appendInterviewerMessage,
+      appendSystemMessage,
+      ensurePlayer,
+      sessionId,
+      setCandidateFinal,
+      setCandidatePartial,
+      transitionAnswerPhase,
+    ],
   );
 
   const stopCapture = useCallback(() => {
@@ -275,8 +354,12 @@ export function useVoiceInterview(
     stopCapture();
     playerRef.current?.dispose();
     playerRef.current = null;
+    playbackChainRef.current = Promise.resolve();
+    isPlaybackActiveRef.current = false;
+    dropAudioOutputRef.current = false;
+    transitionAnswerPhase("locked");
     setConnectionState("disconnected");
-  }, [stopCapture]);
+  }, [stopCapture, transitionAnswerPhase]);
 
   const connect = useCallback(() => {
     if (!sessionId || !accessToken) {
@@ -289,7 +372,7 @@ export function useVoiceInterview(
     setErrorMessage(null);
     setIsSessionReady(false);
 
-    const client = new InterviewWebSocket(sessionId, accessToken);
+    const client = new InterviewWebSocket(sessionId, () => fetchWsTicket(sessionId));
     clientRef.current = client;
     client.connect(
       handleEnvelope,
@@ -343,14 +426,26 @@ export function useVoiceInterview(
   }, [appendSystemMessage, sessionId]);
 
   const beginAnswer = useCallback(async () => {
-    if (
-      !isAwaitingAnswer &&
-      (interviewerState === "speaking" ||
-        interviewerState === "thinking" ||
-        interviewerState === "processing")
-    ) {
-      setErrorMessage("Wait for the interviewer to finish before answering.");
+    const phase = answerPhaseRef.current;
+    const canBargeIn = phase === "locked" && isPlaybackActiveRef.current;
+    if (phase !== "ready" && phase !== "paused" && !canBargeIn) {
+      setErrorMessage(
+        phase === "submitted"
+          ? "Your answer is being processed. Wait for the next question."
+          : "Wait for the interviewer to finish before answering.",
+      );
       return;
+    }
+
+    if (canBargeIn) {
+      // Barge-in: stop interviewer playback locally and tell the server to
+      // cancel the rest of the TTS stream for this turn.
+      dropAudioOutputRef.current = true;
+      isPlaybackActiveRef.current = false;
+      playerRef.current?.stop();
+      playbackChainRef.current = Promise.resolve();
+      clientRef.current?.send(WS_EVENTS.client.outputCancel, {});
+      setInterviewerState("listening");
     }
 
     try {
@@ -362,44 +457,55 @@ export function useVoiceInterview(
           seq: audioSeqRef.current,
           data: dataBase64,
           timestamp_ms: timestampMs,
-          is_final_chunk: false,
         });
         audioSeqRef.current += 1;
       });
 
+      // Note: audio seq is NOT reset here. Pausing and resuming stays within
+      // one server-side turn buffer, which requires a monotonic sequence.
       await capture.start();
-      audioSeqRef.current = 0;
       capture.beginStreaming();
       setPermissionDenied(false);
       setIsMicEnabled(true);
       setIsRecording(true);
       setInterviewerState("listening");
       setErrorMessage(null);
+      transitionAnswerPhase("recording");
     } catch {
       setPermissionDenied(true);
       setIsMicEnabled(false);
       setIsRecording(false);
       setErrorMessage("Microphone permission is required to answer by voice.");
     }
-  }, [interviewerState, isAwaitingAnswer]);
+  }, [transitionAnswerPhase]);
 
   const finishAnswer = useCallback(() => {
+    const phase = answerPhaseRef.current;
+    if (phase !== "recording" && phase !== "paused") {
+      return;
+    }
+
     captureRef.current?.stopStreaming();
     setIsRecording(false);
     setInterviewerState("processing");
+    // Lock the mic until the next question's audio has finished playing.
+    setIsAwaitingAnswer(false);
+    transitionAnswerPhase("submitted");
 
     clientRef.current?.send(WS_EVENTS.client.speechEnd, {
       timestamp_ms: Date.now(),
     });
-  }, []);
+  }, [transitionAnswerPhase]);
 
   const pauseAnswer = useCallback(() => {
+    if (answerPhaseRef.current !== "recording") {
+      return;
+    }
     captureRef.current?.stopStreaming();
     setIsRecording(false);
-    if (isAwaitingAnswer) {
-      setInterviewerState("idle");
-    }
-  }, [isAwaitingAnswer]);
+    setInterviewerState("idle");
+    transitionAnswerPhase("paused");
+  }, [transitionAnswerPhase]);
 
   const endInterview = useCallback(async () => {
     return new Promise<void>((resolve, reject) => {
@@ -419,13 +525,17 @@ export function useVoiceInterview(
 
       window.setTimeout(() => {
         if (endInterviewRejectRef.current) {
-          endInterviewRejectRef.current(new Error("Timed out waiting for session.end"));
+          const reject = endInterviewRejectRef.current;
           endInterviewResolveRef.current = null;
           endInterviewRejectRef.current = null;
+          // Don't leave a half-open connection behind on timeout; the caller
+          // can still end the session over REST.
+          disconnect();
+          reject(new Error("Timed out waiting for the session to end."));
         }
       }, 10000);
     });
-  }, []);
+  }, [disconnect]);
 
   useEffect(() => {
     return () => {
@@ -447,6 +557,7 @@ export function useVoiceInterview(
     permissionDenied,
     audioLevel,
     isAwaitingAnswer,
+    answerPhase,
     connect,
     disconnect,
     startInterview,

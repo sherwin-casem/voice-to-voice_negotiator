@@ -6,13 +6,11 @@ import {
   PricingTierCards,
 } from "@/components/marketing/PricingBlocks";
 import {
-  MarketingCtaBand,
   MarketingHero,
   MarketingSection,
 } from "@/components/marketing/MarketingSections";
 import {
   PRICING_COMPARISON,
-  PRICING_CTA,
   PRICING_FAQ,
   PRICING_HERO,
   PRICING_TIERS,
@@ -30,6 +28,7 @@ export default function PricingPage() {
         {...PRICING_HERO}
         primaryCta={{ label: "Get started free", href: PRICING_TIERS[0].cta.href }}
         secondaryCta={{ label: "Compare features", href: "#comparison" }}
+        art={{ src: "/backgrounds/network-sphere.png", width: 307, height: 512 }}
       />
 
       <MarketingSection
@@ -52,8 +51,6 @@ export default function PricingPage() {
       <MarketingSection eyebrow="FAQ" title="Common questions">
         <FaqAccordion items={PRICING_FAQ} />
       </MarketingSection>
-
-      <MarketingCtaBand {...PRICING_CTA} />
     </>
   );
 }

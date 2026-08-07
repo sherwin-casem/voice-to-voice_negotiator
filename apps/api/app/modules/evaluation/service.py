@@ -9,7 +9,7 @@ from app.modules.evaluation.interface import Evaluator
 from app.modules.evaluation.schemas import AgentExecutionResult, CoachInput, EvaluationContext, EvaluationRunResult
 
 logger = logging.getLogger(__name__)
-ORCHESTRATION_VERSION = "1.2"
+ORCHESTRATION_VERSION = "1.3"
 
 
 class EvaluationService:
@@ -82,14 +82,18 @@ class EvaluationService:
         agent_name: AgentName,
         context: EvaluationContext,
     ) -> AgentExecutionResult:
-        specialist_results = list(
-            await asyncio.gather(*(evaluator.evaluate(context) for evaluator in self._evaluators))
-        )
+        # Judge and coach need the full specialist pass; a single specialist
+        # request runs only that evaluator.
+        if agent_name in {AgentName.SCORING_JUDGE, AgentName.IMPROVEMENT_COACH}:
+            specialist_results = list(
+                await asyncio.gather(
+                    *(evaluator.evaluate(context) for evaluator in self._evaluators)
+                )
+            )
 
-        if agent_name == AgentName.SCORING_JUDGE:
-            return await self._judge.judge(context, specialist_results)
+            if agent_name == AgentName.SCORING_JUDGE:
+                return await self._judge.judge(context, specialist_results)
 
-        if agent_name == AgentName.IMPROVEMENT_COACH:
             judge_result = await self._judge.judge(context, specialist_results)
             if not judge_result.succeeded or judge_result.output is None:
                 return AgentExecutionResult(

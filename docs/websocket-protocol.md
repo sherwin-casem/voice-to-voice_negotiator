@@ -104,8 +104,7 @@ Stream a microphone audio chunk to the backend.
   "payload": {
     "seq": 0,
     "data": "<base64>",
-    "timestamp_ms": 1710000000456,
-    "is_final_chunk": false
+    "timestamp_ms": 1710000000456
   }
 }
 ```
@@ -115,7 +114,6 @@ Stream a microphone audio chunk to the backend.
 | `seq` | int | Monotonically increasing sequence number per turn |
 | `data` | string | Base64-encoded audio bytes |
 | `timestamp_ms` | int | Client capture timestamp |
-| `is_final_chunk` | bool | Optional hint that this is the last chunk of a turn |
 
 **Audio format (MVP):** PCM 16-bit little-endian, 16 kHz, mono (`pcm_s16le`).
 
@@ -159,7 +157,7 @@ End the interview from the client.
 
 **Server actions:**
 - Ends the interview session via orchestrator.
-- Sends confirming `session.end` with final status.
+- Sends confirming `session.ended` with final status.
 - Closes the WebSocket.
 
 ---
@@ -304,16 +302,16 @@ Structured error notification.
 
 ---
 
-### `session.end`
+### `session.ended`
 
-Server confirmation that the session has ended (also used as the client-initiated end event).
+Server confirmation that the session has ended.
 
 ```json
 {
-  "type": "session.end",
+  "type": "session.ended",
   "payload": {
     "reason": "user_ended",
-    "status": "completed"
+    "status": "completing"
   }
 }
 ```
@@ -340,7 +338,7 @@ Browser                WebSocket handler           Voice pipeline              I
    │◄─── audio.output (xN) ───│◄── TTS stream ───────────│                            │
    │                          │                          │                            │
    │──── session.end ────────►│── end_session ──────────►│── end_session ────────────►│
-   │◄─── session.end ─────────│                          │                            │
+   │◄─── session.ended ───────│                          │                            │
 ```
 
 ---

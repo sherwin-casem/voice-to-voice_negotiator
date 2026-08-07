@@ -12,8 +12,10 @@ DIFFICULTY_OFFSETS: dict[str, float] = {
 def dimension_applicable(record: SessionProgressRecord, dimension: str) -> bool:
     if dimension == "overall":
         return True
-    if dimension in {"technical", "problem_solving"}:
+    if dimension == "technical":
         return record.interview_type.value in TECHNICAL_INTERVIEW_TYPES
+    # problem_solving is scored for all interview types (behavioral answers are
+    # scored on ownership/impact), so it follows the generic presence check.
     return dimension in record.dimension_scores and record.dimension_scores[dimension] is not None
 
 
@@ -32,9 +34,8 @@ def normalize_dimension_score(
     offset = DIFFICULTY_OFFSETS.get(difficulty, 0.0)
     normalized = raw + offset
 
-    if dimension in {"technical", "problem_solving"}:
-        if record.interview_type.value not in TECHNICAL_INTERVIEW_TYPES:
-            return None
+    if dimension == "technical" and record.interview_type.value not in TECHNICAL_INTERVIEW_TYPES:
+        return None
 
     return round(max(0.0, min(100.0, normalized)), 1)
 

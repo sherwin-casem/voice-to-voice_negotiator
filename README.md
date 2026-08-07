@@ -45,8 +45,10 @@ docker compose -f infrastructure/docker-compose.yml up -d
 ```bash
 uv sync --directory apps/api
 uv run --directory apps/api alembic upgrade head
-uv run --directory apps/api uvicorn app.main:app --reload --port 8000
+npm run dev:api
 ```
+
+On Windows, use `run_dev.py` (via `npm run dev:api` or `scripts/dev-api.ps1`) so async PostgreSQL works. On Linux/macOS you may also run `uv run --directory apps/api uvicorn app.main:app --reload --port 8000`.
 
 API docs: http://localhost:8000/docs
 
@@ -64,8 +66,8 @@ Web app: http://localhost:3000
 | Script | Purpose |
 |--------|---------|
 | `scripts/setup.ps1` | Install JS and Python dependencies |
-| `scripts/dev-api.ps1` | Run FastAPI with reload |
-| `scripts/dev-web.ps1` | Run Next.js dev server |
+| `npm run dev:api` | Run FastAPI with reload (Windows-safe event loop) |
+| `npm run dev:web` | Run Next.js dev server |
 | `scripts/dev-db.ps1` | Start PostgreSQL via Docker Compose |
 | `scripts/test-api.ps1` | Run API pytest suite |
 

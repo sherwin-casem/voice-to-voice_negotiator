@@ -4,14 +4,19 @@ from pydantic import BaseModel, Field
 
 
 class JudgeDimensionScores(BaseModel):
-    """Normalized dimension scores on a 0–100 scale."""
+    """Normalized dimension scores on a 0–100 scale.
 
-    communication: float = Field(ge=0, le=100)
+    A dimension is None when it is not applicable to the interview type or the
+    specialist that produces it failed; the overall score renormalizes over the
+    remaining dimensions instead of substituting neutral values.
+    """
+
+    communication: float | None = Field(default=None, ge=0, le=100)
     technical: float | None = Field(default=None, ge=0, le=100)
-    relevance: float = Field(ge=0, le=100)
-    structure: float = Field(ge=0, le=100)
-    confidence: float = Field(ge=0, le=100)
-    conciseness: float = Field(ge=0, le=100)
+    relevance: float | None = Field(default=None, ge=0, le=100)
+    structure: float | None = Field(default=None, ge=0, le=100)
+    confidence: float | None = Field(default=None, ge=0, le=100)
+    conciseness: float | None = Field(default=None, ge=0, le=100)
     problem_solving: float | None = Field(default=None, ge=0, le=100)
 
 

@@ -55,22 +55,22 @@ export function GettingStartedChecklist({
 }) {
   return (
     <ol className="space-y-4">
-      {steps.map((step) => (
-        <li key={step.step}>
-          <Link
-            href={step.href}
-            className="glass-panel group flex gap-4 p-5 transition-colors hover:bg-[var(--bg-panel-hover)]"
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-500/15 text-sm font-semibold text-teal-300">
-              {step.step}
-            </span>
-            <div>
-              <p className="font-medium text-[var(--text-primary)] group-hover:text-teal-300">{step.title}</p>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">{step.detail}</p>
-            </div>
-          </Link>
-        </li>
-      ))}
+        {steps.map((step) => (
+          <li key={step.step}>
+            <Link
+              href={step.href}
+              className="glass-panel group flex gap-4 p-5 transition-colors hover:bg-[var(--bg-panel-hover)]"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-500/15 text-sm font-semibold text-teal-300">
+                {step.step}
+              </span>
+              <div>
+                <p className="font-medium text-[var(--text-primary)] group-hover:text-teal-300">{step.title}</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">{step.detail}</p>
+              </div>
+            </Link>
+          </li>
+        ))}
     </ol>
   );
 }

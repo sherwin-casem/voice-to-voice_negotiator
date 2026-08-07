@@ -9,6 +9,7 @@ export const WS_EVENTS = {
     audioInput: "audio.input",
     speechEnd: "speech.end",
     sessionEnd: "session.end",
+    outputCancel: "output.cancel",
   },
   server: {
     sessionReady: "session.ready",
@@ -18,6 +19,6 @@ export const WS_EVENTS = {
     interviewerResponse: "interviewer.response",
     audioOutput: "audio.output",
     sessionError: "session.error",
-    sessionEnd: "session.end",
+    sessionEnded: "session.ended",
   },
 } as const;

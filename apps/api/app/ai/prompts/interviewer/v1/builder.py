@@ -1,9 +1,10 @@
 from pathlib import Path
 
+from app.ai.prompts.fencing import fence_untrusted
 from app.ai.schemas.interviewer import InterviewerContext
 from app.db.enums import InterviewType
 
-PROMPT_VERSION = "1.1"
+PROMPT_VERSION = "1.2"
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 _TYPE_GUIDANCE: dict[InterviewType, str] = {
@@ -56,7 +57,7 @@ def _format_prior_turns(context: InterviewerContext) -> str:
             f"Q{turn.sequence_num} [{turn.topic_tag or 'general'}]: {turn.question_text}\n"
             f"A{turn.sequence_num}: {answer}"
         )
-    return "\n\n".join(lines)
+    return fence_untrusted("\n\n".join(lines), "candidate answers")
 
 
 def _format_list(values: list[str], empty_label: str = "None") -> str:
@@ -81,8 +82,16 @@ def build_interviewer_messages(context: InterviewerContext) -> list[dict[str, st
         difficulty=context.difficulty,
         target_role=context.target_role or "Not specified",
         company_context=context.company_context or "Not specified",
-        resume_summary=context.resume_summary or "Not provided",
-        job_description_summary=context.job_description_summary or "Not provided",
+        resume_summary=(
+            fence_untrusted(context.resume_summary, "resume summary")
+            if context.resume_summary
+            else "Not provided"
+        ),
+        job_description_summary=(
+            fence_untrusted(context.job_description_summary, "job description summary")
+            if context.job_description_summary
+            else "Not provided"
+        ),
         candidate_skills=_format_list(context.candidate_skills),
         relevant_experience=_format_list(context.relevant_experience),
         relevant_projects=_format_list(context.relevant_projects),

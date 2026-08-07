@@ -9,14 +9,12 @@ import {
   StatsBand,
 } from "@/components/marketing/FeaturesBlocks";
 import {
-  MarketingCtaBand,
   MarketingHero,
   MarketingSection,
 } from "@/components/marketing/MarketingSections";
 import {
   EVALUATION_DIMENSIONS,
   EXPANDED_PILLARS,
-  FEATURES_CTA,
   FEATURES_HERO,
   FEATURES_STATS,
   INTERVIEW_FORMATS,
@@ -33,7 +31,10 @@ export const metadata: Metadata = {
 export default function FeaturesPage() {
   return (
     <>
-      <MarketingHero {...FEATURES_HERO} />
+      <MarketingHero
+        {...FEATURES_HERO}
+        art={{ src: "/backgrounds/ai-head.png", width: 307, height: 512 }}
+      />
 
       <MarketingSection eyebrow={PROBLEM_SOLUTION.eyebrow} title={PROBLEM_SOLUTION.title}>
         <ProblemSolutionBlock problem={PROBLEM_SOLUTION.problem} solution={PROBLEM_SOLUTION.solution} />
@@ -74,8 +75,6 @@ export default function FeaturesPage() {
       <MarketingSection title="Built for voice-first preparation">
         <StatsBand stats={FEATURES_STATS} />
       </MarketingSection>
-
-      <MarketingCtaBand {...FEATURES_CTA} />
     </>
   );
 }

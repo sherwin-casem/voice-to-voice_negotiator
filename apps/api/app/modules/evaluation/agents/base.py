@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.ai.providers.base import StructuredOutputProvider
 from app.ai.schemas.evaluation.common import DimensionScore
+from app.ai.usage import consume_token_usage
 from app.db.enums import AgentName, EvaluationRunStatus
 from app.modules.evaluation.schemas import AgentExecutionResult, EvaluationContext
 
@@ -83,6 +84,7 @@ class BaseEvaluator:
                 latency_ms=int((time.perf_counter() - start_ms) * 1000),
                 started_at=started_at,
                 completed_at=completed_at,
+                token_usage=consume_token_usage(),
             )
         except Exception as exc:  # noqa: BLE001 — isolate agent failures
             logger.exception(

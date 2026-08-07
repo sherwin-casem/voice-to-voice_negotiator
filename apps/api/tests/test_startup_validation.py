@@ -20,6 +20,17 @@ def test_validate_settings_rejects_production_with_default_db() -> None:
         validate_settings(settings)
 
 
+def test_validate_settings_rejects_disabled_rate_limiting_in_production() -> None:
+    settings = Settings(
+        app_env="production",
+        rate_limit_enabled=False,
+        database_url="postgresql+psycopg://app:secret@db:5432/voice_negotiator",
+    )
+
+    with pytest.raises(RuntimeError, match="RATE_LIMIT_ENABLED"):
+        validate_settings(settings)
+
+
 def test_validate_settings_requires_openai_key_in_production() -> None:
     settings = Settings(
         app_env="production",

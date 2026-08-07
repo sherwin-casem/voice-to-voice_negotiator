@@ -1,8 +1,9 @@
 from pathlib import Path
 
+from app.ai.prompts.fencing import fence_untrusted
 from app.ai.schemas.context import ParsedJobRequirements, ParsedResumeProfile
 
-PROMPT_VERSION = "1.0"
+PROMPT_VERSION = "1.1"
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
@@ -12,7 +13,10 @@ def _load(name: str) -> str:
 
 def build_resume_extraction_messages(title: str, raw_text: str) -> list[dict[str, str]]:
     system = _load("resume_system.txt")
-    user = _load("resume_user.txt").format(title=title, raw_text=raw_text[:12000])
+    user = _load("resume_user.txt").format(
+        title=title,
+        raw_text=fence_untrusted(raw_text[:12000], "resume text"),
+    )
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
@@ -28,7 +32,7 @@ def build_job_description_extraction_messages(
     user = _load("job_description_user.txt").format(
         title=title,
         company_name=company_name or "Not specified",
-        raw_text=raw_text[:12000],
+        raw_text=fence_untrusted(raw_text[:12000], "job description text"),
     )
     return [
         {"role": "system", "content": system},

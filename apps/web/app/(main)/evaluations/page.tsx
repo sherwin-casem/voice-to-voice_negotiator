@@ -10,6 +10,7 @@ import { SessionStatusBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { GlassPanel } from "@/components/ui/GlassPanel";
+import { GlowArt } from "@/components/ui/GlowArt";
 import { MetricBar } from "@/components/ui/MetricBar";
 import { useProgressAnalysis } from "@/hooks/useProgressAnalysis";
 import { useSessionHistory } from "@/hooks/useSessionHistory";
@@ -134,6 +135,13 @@ export default function EvaluationsPage() {
 
       {isEmpty ? (
         <GlassPanel className="border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-cyan-500/5 p-8 text-center">
+          <GlowArt
+            src="/backgrounds/progress-orb.png"
+            width={329}
+            height={199}
+            sizes="13rem"
+            className="mx-auto mb-4 w-52"
+          />
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">No practice sessions yet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-muted)]">
             Complete your first voice interview to unlock evaluation trends, dimension scores, and

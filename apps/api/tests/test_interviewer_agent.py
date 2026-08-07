@@ -1,5 +1,6 @@
 import pytest
 
+from app.ai.prompts.interviewer.v1.builder import PROMPT_VERSION
 from app.ai.schemas.interviewer import InterviewerContext, PriorTurn
 from app.db.enums import InterviewType
 from app.modules.interview.interviewer_agent import InterviewerAgent, MockInterviewerLLMProvider
@@ -33,7 +34,7 @@ async def test_mock_interviewer_generates_opening_question(
     assert output.topic_tag
     assert output.is_follow_up is False
     assert output.should_end_session is False
-    assert output.prompt_version == "1.1"
+    assert output.prompt_version == PROMPT_VERSION
 
 
 @pytest.mark.asyncio

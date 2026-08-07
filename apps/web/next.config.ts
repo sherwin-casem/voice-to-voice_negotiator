@@ -7,6 +7,8 @@ const apiProxyTarget =
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@voice/shared"],
+  // Playwright and some local tooling hit 127.0.0.1 while `next dev` binds as localhost.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   turbopack: {
     root: path.join(__dirname, "../.."),
   },

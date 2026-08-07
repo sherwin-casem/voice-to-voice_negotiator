@@ -1,7 +1,7 @@
 import pytest
 
 from app.ai.schemas.evaluation.communication import CommunicationEvaluationOutput
-from app.db.enums import AgentName, EvaluationRunStatus, InterviewType
+from app.db.enums import AgentName, EvaluationRunStatus, EvaluationScope, InterviewType
 from app.modules.evaluation.agents.registry import build_specialist_evaluators
 from app.modules.evaluation.mock_llm import MockEvaluationLLMProvider
 from app.modules.evaluation.schemas import EvaluationContext
@@ -11,6 +11,7 @@ def _sample_context(interview_type: InterviewType = InterviewType.BEHAVIORAL) ->
     return EvaluationContext(
         interview_type=interview_type,
         difficulty="mid",
+        scope=EvaluationScope.SESSION,
         target_role="Backend Engineer",
         company_context="Series B startup",
         resume_summary="5 years building APIs",

@@ -1,13 +1,16 @@
 "use client";
 
 import { AuthEntryButtonLink, AuthEntryLink } from "@/components/auth/AuthEntryLink";
+import { GlowArt } from "@/components/ui/GlowArt";
 import { cn } from "@/lib/format";
+
 export function MarketingHero({
   eyebrow,
   title,
   description,
   primaryCta,
   secondaryCta,
+  art,
   className,
 }: {
   eyebrow: string;
@@ -15,23 +18,37 @@ export function MarketingHero({
   description: string;
   primaryCta: { label: string; href: string };
   secondaryCta?: { label: string; href: string };
+  art?: { src: string; width: number; height: number };
   className?: string;
 }) {
   return (
-    <section className={cn("mb-16 max-w-3xl", className)}>
-      <p className="text-section-label">{eyebrow}</p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
-        {title}
-      </h1>
-      <p className="mt-4 text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">{description}</p>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <AuthEntryButtonLink href={primaryCta.href} className="px-6 py-2.5 text-sm">
-          {primaryCta.label} →
-        </AuthEntryButtonLink>
-        {secondaryCta ? (
-          <AuthEntryButtonLink href={secondaryCta.href} variant="secondary" className="px-6 py-2.5 text-sm">
-            {secondaryCta.label}
-          </AuthEntryButtonLink>
+    <section className={cn("mb-16", className)}>
+      <div className="flex items-center gap-12">
+        <div className="max-w-3xl flex-1">
+          <p className="text-section-label">{eyebrow}</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
+            {title}
+          </h1>
+          <p className="mt-4 text-base leading-relaxed text-[var(--text-muted)] sm:text-lg">{description}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <AuthEntryButtonLink href={primaryCta.href} className="px-6 py-2.5 text-sm">
+              {primaryCta.label} →
+            </AuthEntryButtonLink>
+            {secondaryCta ? (
+              <AuthEntryButtonLink href={secondaryCta.href} variant="secondary" className="px-6 py-2.5 text-sm">
+                {secondaryCta.label}
+              </AuthEntryButtonLink>
+            ) : null}
+          </div>
+        </div>
+        {art ? (
+          <GlowArt
+            src={art.src}
+            width={art.width}
+            height={art.height}
+            sizes="(min-width: 1280px) 18rem, 16rem"
+            className="hidden w-64 shrink-0 lg:block xl:w-72"
+          />
         ) : null}
       </div>
     </section>

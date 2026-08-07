@@ -15,6 +15,7 @@ class AudioChunk:
     data: bytes
     seq: int
     is_final: bool = False
+    sample_rate: int | None = None
 
 
 class SpeechToTextProvider(Protocol):

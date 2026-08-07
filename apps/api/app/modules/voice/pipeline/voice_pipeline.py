@@ -5,14 +5,18 @@ from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 from app.config import settings
-from app.core.exceptions import AppError
+from app.core.exceptions import AppError, MaxQuestionsReachedError
+from app.db.enums import InterviewSessionStatus
+from app.modules.evaluation.runner import schedule_session_evaluation
 from app.modules.interview.orchestrator import InterviewOrchestrator
+from app.modules.interview.scoped_orchestrator import SessionScopedOrchestrator
 from app.modules.voice.pipeline.turn_buffer import TurnAudioBuffer
 from app.modules.voice.providers.base import SpeechToTextProvider, TextToSpeechProvider
 from app.modules.voice.protocol.events import (
     AudioOutputPayload,
     InterviewerResponsePayload,
     InterviewerThinkingPayload,
+    SessionEndedPayload,
     SessionErrorPayload,
     TranscriptFinalPayload,
     TranscriptPartialPayload,
@@ -22,6 +26,7 @@ from app.modules.voice.protocol.types import (
     AUDIO_OUTPUT,
     INTERVIEWER_RESPONSE,
     INTERVIEWER_THINKING,
+    SESSION_ENDED,
     SESSION_ERROR,
     TRANSCRIPT_FINAL,
     TRANSCRIPT_PARTIAL,
@@ -40,16 +45,16 @@ class VoicePipeline:
 
     def __init__(
         self,
-        orchestrator: InterviewOrchestrator,
+        orchestrator: "InterviewOrchestrator | SessionScopedOrchestrator",
         stt_provider: SpeechToTextProvider,
         tts_provider: TextToSpeechProvider,
         *,
-        emit: EmitFn,
+        emit: EmitFn | None = None,
     ) -> None:
         self._orchestrator = orchestrator
         self._stt = stt_provider
         self._tts = tts_provider
-        self._emit = emit
+        self._emit_fn = emit
         self._turn_buffer = TurnAudioBuffer(
             max_chunk_bytes=settings.ws_max_audio_chunk_bytes,
             max_turn_bytes=settings.ws_max_turn_audio_bytes,
@@ -57,6 +62,21 @@ class VoicePipeline:
         self._current_question_id: UUID | None = None
         self._processing = False
         self._cancel_tts = False
+        self._end_after_answer = False
+        self._on_session_complete: Callable[[], Awaitable[None]] | None = None
+
+    def set_session_complete_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
+        """Invoked after a server-initiated session end so the transport can close."""
+        self._on_session_complete = callback
+
+    def set_emit(self, emit: EmitFn) -> None:
+        """Route output through the connection handler's guarded send."""
+        self._emit_fn = emit
+
+    async def _emit(self, message: dict) -> None:
+        if self._emit_fn is None:
+            raise RuntimeError("VoicePipeline emit function is not configured")
+        await self._emit_fn(message)
 
     @property
     def current_question_id(self) -> UUID | None:
@@ -82,6 +102,7 @@ class VoicePipeline:
         request_id: str | None = None,
     ) -> None:
         self._current_question_id = question_id
+        self._end_after_answer = should_end_session
         await self._emit(
             build_server_envelope(
                 INTERVIEWER_RESPONSE,
@@ -144,6 +165,21 @@ class VoicePipeline:
                 audio=audio,
                 request_id=request_id,
             )
+        except AppError as exc:
+            await self._emit_error(exc.code, exc.message, recoverable=False, request_id=request_id)
+        except Exception:
+            # STT/TTS provider failures, schema errors, DB errors: surface a
+            # structured error to the client instead of silently killing the task.
+            logger.exception(
+                "Voice turn processing failed",
+                extra={"component": "voice_pipeline", "session_id": str(session_id)},
+            )
+            await self._emit_error(
+                "TURN_PROCESSING_FAILED",
+                "Processing your answer failed. Please try again.",
+                recoverable=True,
+                request_id=request_id,
+            )
         finally:
             self._processing = False
 
@@ -169,6 +205,7 @@ class VoicePipeline:
         audio: bytes,
         request_id: str | None,
     ) -> None:
+        stt_start = time.perf_counter()
         async for transcript in self._stt.stream_transcribe(
             audio,
             sample_rate=self._turn_buffer.sample_rate,
@@ -183,6 +220,8 @@ class VoicePipeline:
                     )
                 )
                 continue
+
+            self._log_stage_latency("stt", stt_start, session_id)
 
             await self._emit(
                 build_server_envelope(
@@ -200,6 +239,16 @@ class VoicePipeline:
                 answer_text=transcript.text,
             )
 
+            if self._end_after_answer:
+                # The answered question was the interviewer's closing question.
+                await self._complete_session(
+                    session_id,
+                    user_id,
+                    reason="interviewer_ended",
+                    request_id=request_id,
+                )
+                return
+
             await self._emit(
                 build_server_envelope(
                     INTERVIEWER_THINKING,
@@ -209,8 +258,20 @@ class VoicePipeline:
                 )
             )
 
+            llm_start = time.perf_counter()
             try:
                 result = await self._orchestrator.ask_next_question(session_id, user_id)
+                self._log_stage_latency("llm", llm_start, session_id)
+            except MaxQuestionsReachedError:
+                # Backstop for interviewer agents that never flag a closing
+                # question: end gracefully instead of surfacing a conflict.
+                await self._complete_session(
+                    session_id,
+                    user_id,
+                    reason="max_questions_reached",
+                    request_id=request_id,
+                )
+                return
             except AppError as exc:
                 await self._emit_error(exc.code, exc.message, recoverable=False, request_id=request_id)
                 return
@@ -225,12 +286,47 @@ class VoicePipeline:
                 request_id=request_id,
             )
 
+    async def _complete_session(
+        self,
+        session_id: UUID,
+        user_id: UUID,
+        *,
+        reason: str,
+        request_id: str | None,
+    ) -> None:
+        session = await self._orchestrator.end_session(session_id, user_id, reason=reason)
+        if session.status == InterviewSessionStatus.COMPLETING:
+            schedule_session_evaluation(session_id, user_id)
+        await self._emit(
+            build_server_envelope(
+                SESSION_ENDED,
+                SessionEndedPayload(reason=reason, status=session.status.value),
+                request_id=request_id,
+                timestamp_ms=_now_ms(),
+            )
+        )
+        if self._on_session_complete is not None:
+            await self._on_session_complete()
+
+    def _log_stage_latency(self, stage: str, start: float, session_id: UUID | None = None) -> None:
+        extra: dict = {
+            "component": "voice_pipeline",
+            "stage": stage,
+            "latency_ms": int((time.perf_counter() - start) * 1000),
+        }
+        if session_id is not None:
+            extra["session_id"] = str(session_id)
+        logger.info("Voice turn stage completed", extra=extra)
+
     async def _stream_tts(self, text: str, *, request_id: str | None) -> None:
         self._cancel_tts = False
+        tts_start = time.perf_counter()
         async for chunk in self._tts.synthesize(text, sample_rate=self._turn_buffer.sample_rate):
             if self._cancel_tts:
                 logger.info("TTS output cancelled", extra={"component": "voice_pipeline"})
                 break
+            if not chunk.data and not chunk.is_final:
+                continue
             await self._emit(
                 build_server_envelope(
                     AUDIO_OUTPUT,
@@ -238,13 +334,16 @@ class VoicePipeline:
                         seq=chunk.seq,
                         data=base64.b64encode(chunk.data).decode("ascii"),
                         encoding=self._turn_buffer.encoding,
-                        sample_rate=self._turn_buffer.sample_rate,
+                        # Providers dictate their true output rate; fall back to
+                        # the negotiated session rate for providers that honor it.
+                        sample_rate=chunk.sample_rate or self._turn_buffer.sample_rate,
                         is_final=chunk.is_final,
                     ),
                     request_id=request_id,
                     timestamp_ms=_now_ms(),
                 )
             )
+        self._log_stage_latency("tts", tts_start)
 
     async def _emit_error(
         self,

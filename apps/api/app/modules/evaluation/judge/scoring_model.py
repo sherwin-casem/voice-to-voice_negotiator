@@ -4,7 +4,7 @@ from app.ai.schemas.evaluation.judge import JudgeDimensionScores
 from app.db.enums import AgentName, InterviewType
 from app.modules.evaluation.schemas import AgentExecutionResult, EvaluationContext
 
-METHODOLOGY_VERSION = "1.0"
+METHODOLOGY_VERSION = "1.1"
 
 INTERVIEW_WEIGHTS: dict[InterviewType, dict[str, float]] = {
     InterviewType.TECHNICAL: {
@@ -98,7 +98,7 @@ class ScoringModel:
 
         conflict_resolutions: list[str] = []
 
-        comm_score = cls._communication_dimension(communication)
+        comm_score = cls._communication_dimension(communication, behavioral)
         structure_score = cls._structure_dimension(communication, behavioral)
         conciseness_score = cls._conciseness_dimension(communication)
         confidence_score = cls._confidence_dimension(communication)
@@ -173,44 +173,53 @@ class ScoringModel:
         )
 
     @staticmethod
-    def _communication_dimension(result: AgentExecutionResult | None) -> float:
+    def _communication_dimension(
+        result: AgentExecutionResult | None,
+        behavioral: AgentExecutionResult | None,
+    ) -> float | None:
         if result is None or not result.succeeded or result.output is None:
-            return 50.0
+            return None
         dims = result.output.dimensions  # type: ignore[attr-defined]
-        return round(_avg(_scale(dims.clarity.score), _scale(dims.tone.score)), 1)
+        base = _avg(_scale(dims.clarity.score), _scale(dims.tone.score))
+        # For behavioral-style interviews, team communication (collaboration)
+        # is part of how communication quality is judged.
+        if behavioral and behavioral.succeeded and behavioral.output is not None:
+            collaboration = _scale(behavioral.output.dimensions.collaboration.score)  # type: ignore[union-attr]
+            return round((base * 0.75) + (collaboration * 0.25), 1)
+        return round(base, 1)
 
     @staticmethod
     def _structure_dimension(
         communication: AgentExecutionResult | None,
         behavioral: AgentExecutionResult | None,
-    ) -> float:
+    ) -> float | None:
         scores: list[float] = []
         if communication and communication.succeeded and communication.output is not None:
             scores.append(_scale(communication.output.dimensions.structure.score))  # type: ignore[union-attr]
         if behavioral and behavioral.succeeded and behavioral.output is not None:
             scores.append(_scale(behavioral.output.dimensions.star_method.score))  # type: ignore[union-attr]
         if not scores:
-            return 50.0
+            return None
         if len(scores) == 2:
             return round((scores[0] * 0.65) + (scores[1] * 0.35), 1)
         return scores[0]
 
     @staticmethod
-    def _conciseness_dimension(result: AgentExecutionResult | None) -> float:
+    def _conciseness_dimension(result: AgentExecutionResult | None) -> float | None:
         if result is None or not result.succeeded or result.output is None:
-            return 50.0
+            return None
         return _scale(result.output.dimensions.conciseness.score)  # type: ignore[union-attr]
 
     @staticmethod
-    def _confidence_dimension(result: AgentExecutionResult | None) -> float:
+    def _confidence_dimension(result: AgentExecutionResult | None) -> float | None:
         if result is None or not result.succeeded or result.output is None:
-            return 50.0
+            return None
         return _scale(result.output.dimensions.confidence.score)  # type: ignore[union-attr]
 
     @staticmethod
-    def _relevance_dimension(result: AgentExecutionResult | None) -> float:
+    def _relevance_dimension(result: AgentExecutionResult | None) -> float | None:
         if result is None or not result.succeeded or result.output is None:
-            return 50.0
+            return None
         dims = result.output.dimensions  # type: ignore[attr-defined]
         return round(
             _avg(
@@ -257,9 +266,11 @@ class ScoringModel:
             return None
 
         if behavioral and behavioral.succeeded and behavioral.output is not None:
+            # STAR structure already feeds the structure dimension; problem
+            # solving is measured by ownership and impact instead.
             dims = behavioral.output.dimensions  # type: ignore[attr-defined]
             return round(
-                _avg(_scale(dims.star_method.score), _scale(dims.impact.score)),
+                _avg(_scale(dims.ownership.score), _scale(dims.impact.score)),
                 1,
             )
         return None

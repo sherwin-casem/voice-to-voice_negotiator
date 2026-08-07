@@ -2,6 +2,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
+from app.db.enums import InterviewSessionStatus
+from app.modules.evaluation.runner import schedule_session_evaluation
 from app.modules.interview.deps import get_interview_orchestrator, get_interview_repository
 from app.modules.auth.deps import get_user_id
 from app.modules.interview.orchestrator import InterviewOrchestrator
@@ -211,4 +213,6 @@ async def end_session(
     orchestrator: InterviewOrchestrator = Depends(get_interview_orchestrator),
 ) -> ApiResponse[SessionResponse]:
     session = await orchestrator.end_session(session_id, user_id, reason=body.reason)
+    if session.status == InterviewSessionStatus.COMPLETING:
+        schedule_session_evaluation(session_id, user_id)
     return ApiResponse(data=_session_response(session))

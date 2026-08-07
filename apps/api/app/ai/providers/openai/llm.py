@@ -12,6 +12,7 @@ from app.ai.providers.base import StructuredOutputProvider, StreamingTextProvide
 from app.ai.providers.openai._client import OpenAIClientFactory, OpenAISettings, map_openai_exception
 from app.ai.retry import run_with_retry
 from app.ai.types import ChatMessage, TextGenerationResult, TokenUsage
+from app.ai.usage import record_token_usage
 
 T = TypeVar("T", bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -98,22 +99,55 @@ class OpenAIStructuredOutputProvider:
         selected_model = model or self._settings.structured_model
         normalized = _normalize_messages(messages)
 
-        async def operation() -> T:
+        async def call(payload: list[dict[str, str]]) -> T:
             client = self._client_factory.create()
             try:
                 response = await client.beta.chat.completions.parse(
                     model=selected_model,
-                    messages=normalized,
+                    messages=payload,
                     response_format=response_model,
                     temperature=temperature,
                 )
             except Exception as exc:  # noqa: BLE001
                 raise map_openai_exception(exc) from exc
 
+            usage = None
+            if response.usage is not None:
+                usage = TokenUsage(
+                    prompt_tokens=response.usage.prompt_tokens,
+                    completion_tokens=response.usage.completion_tokens,
+                    total_tokens=response.usage.total_tokens,
+                )
+            record_token_usage(usage)
+
             parsed = response.choices[0].message.parsed
             if parsed is None:
                 raise AIResponseError("OpenAI structured response did not contain parsed output")
             return parsed
+
+        async def operation() -> T:
+            try:
+                return await call(normalized)
+            except AIResponseError:
+                # One schema-repair attempt: re-ask with an explicit corrective
+                # instruction before giving up.
+                log_ai_event(
+                    logging.WARNING,
+                    "Structured output parse failed; retrying with repair instruction",
+                    operation="generate_structured",
+                    provider=PROVIDER,
+                    model=selected_model,
+                    schema=response_model.__name__,
+                )
+                repair_message = {
+                    "role": "user",
+                    "content": (
+                        "Your previous response could not be parsed. Respond again with "
+                        f"only a valid JSON object matching the {response_model.__name__} "
+                        "schema. Do not include any other text."
+                    ),
+                }
+                return await call([*normalized, repair_message])
 
         log_ai_event(
             logging.INFO,

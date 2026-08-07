@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -21,3 +23,12 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class WsTicketRequest(BaseModel):
+    session_id: UUID
+
+
+class WsTicketResponse(BaseModel):
+    ticket: str
+    expires_in_seconds: int

@@ -45,7 +45,7 @@ class MockTextToSpeechProvider:
             await asyncio.sleep(0)
             chunk = bytes([digest[seq % len(digest)]] * self.chunk_samples * 2)
             is_final = seq == total_chunks - 1
-            yield AudioChunk(data=chunk, seq=seq, is_final=is_final)
+            yield AudioChunk(data=chunk, seq=seq, is_final=is_final, sample_rate=sample_rate)
 
 
 def _mock_transcript(audio: bytes) -> str:

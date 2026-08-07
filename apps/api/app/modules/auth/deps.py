@@ -16,21 +16,30 @@ async def get_auth_service(session: AsyncSession = Depends(get_async_session)) -
     return AuthService(AuthRepository(session))
 
 
+async def _resolve_bearer_user(authorization: str | None, session: AsyncSession) -> User | None:
+    """Resolve the Bearer token to an active user, or None if no token present."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        return None
+
+    payload = decode_access_token(token)
+    user_id = UUID(payload["sub"])
+    user = await AuthRepository(session).get_user_by_id(user_id)
+    if user is None or not user.is_active:
+        raise UnauthorizedError("User not found or inactive")
+    return user
+
+
 async def get_current_user(
     authorization: str | None = Header(default=None, alias="Authorization"),
     session: AsyncSession = Depends(get_async_session),
 ) -> User:
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.removeprefix("Bearer ").strip()
-        if token:
-            payload = decode_access_token(token)
-            user_id = UUID(payload["sub"])
-            user = await AuthRepository(session).get_user_by_id(user_id)
-            if user is None or not user.is_active:
-                raise UnauthorizedError("User not found or inactive")
-            return user
-
-    raise UnauthorizedError("Authentication required")
+    user = await _resolve_bearer_user(authorization, session)
+    if user is None:
+        raise UnauthorizedError("Authentication required")
+    return user
 
 
 async def get_user_id(
@@ -38,14 +47,9 @@ async def get_user_id(
     x_user_id: str | None = Header(default=None, alias="X-User-Id"),
     session: AsyncSession = Depends(get_async_session),
 ) -> UUID:
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.removeprefix("Bearer ").strip()
-        if token:
-            try:
-                payload = decode_access_token(token)
-                return UUID(payload["sub"])
-            except UnauthorizedError:
-                pass
+    user = await _resolve_bearer_user(authorization, session)
+    if user is not None:
+        return user.id
 
     if settings.allow_dev_user_header and settings.is_development and x_user_id:
         try:

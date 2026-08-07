@@ -80,15 +80,22 @@ async function parseJsonBody<T>(response: Response): Promise<ApiResponse<T>> {
   return (await response.json()) as ApiResponse<T>;
 }
 
+const AUTH_FETCH_TIMEOUT_MS = 10_000;
+
 export async function authFetch<T>(
   path: string,
   options: RequestInit & { accessToken?: string | null } = {},
 ): Promise<T> {
-  const { accessToken: tokenOverride, headers, ...rest } = options;
+  const { accessToken: tokenOverride, headers, signal, ...rest } = options;
   const token = tokenOverride ?? accessToken;
+  const timeoutSignal =
+    typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+      ? AbortSignal.timeout(AUTH_FETCH_TIMEOUT_MS)
+      : undefined;
   const response = await fetch(`${env.apiUrl}${path}`, {
     ...rest,
     credentials: "include",
+    signal: signal ?? timeoutSignal,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -177,4 +184,24 @@ export async function getValidAccessToken(): Promise<string | null> {
     return existing;
   }
   return refreshAccessToken();
+}
+
+/**
+ * Exchange the bearer token for a short-lived, session-bound WebSocket ticket
+ * so long-lived tokens never appear in WebSocket URLs.
+ */
+export async function fetchWsTicket(sessionId: string): Promise<string> {
+  const token = await getValidAccessToken();
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+  const data = await authFetch<{ ticket: string; expires_in_seconds: number }>(
+    "/api/v1/auth/ws-ticket",
+    {
+      method: "POST",
+      accessToken: token,
+      body: JSON.stringify({ session_id: sessionId }),
+    },
+  );
+  return data.ticket;
 }

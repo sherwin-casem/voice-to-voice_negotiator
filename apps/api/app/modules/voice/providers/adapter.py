@@ -66,6 +66,13 @@ class TextToSpeechAdapter:
         *,
         sample_rate: int = 16000,
     ) -> AsyncIterator[AudioChunk]:
+        # The provider dictates the actual output rate (e.g. OpenAI PCM is
+        # 24 kHz); propagate it so clients play audio at the correct speed.
         _ = sample_rate
         async for chunk in self._provider.synthesize(text, response_format="pcm"):
-            yield AudioChunk(data=chunk.data, seq=chunk.seq, is_final=chunk.is_final)
+            yield AudioChunk(
+                data=chunk.data,
+                seq=chunk.seq,
+                is_final=chunk.is_final,
+                sample_rate=chunk.sample_rate,
+            )

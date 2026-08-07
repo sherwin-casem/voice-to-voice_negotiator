@@ -93,6 +93,53 @@ body {
   .metric-fill-success {
     background: linear-gradient(90deg, #16a34a, var(--accent-teal));
   }
+
+  /* Scroll-entrance reveal (driven by components/visuals/Reveal.tsx) */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .animate-float-slow {
+    animation: float-slow 7s ease-in-out infinite;
+  }
+
+  .animate-float-slower {
+    animation: float-slow 11s ease-in-out infinite reverse;
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-float-slow,
+  .animate-float-slower {
+    animation: none;
+  }
 }
 
 select option {

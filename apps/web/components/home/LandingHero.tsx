@@ -3,6 +3,8 @@
 import { AuthEntryButtonLink, AuthEntryLink } from "@/components/auth/AuthEntryLink";
 import { HashLink } from "@/components/navigation/HashLink";
 import { GlowArt } from "@/components/ui/GlowArt";
+import { Reveal } from "@/components/visuals/Reveal";
+import { TiltCard } from "@/components/visuals/TiltCard";
 import { cn } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
@@ -11,6 +13,7 @@ export function LandingHero() {
     <section className="relative flex min-h-[92vh] flex-col justify-center px-4 pb-20 pt-28 sm:px-6">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1fr_34rem]">
         <div className="w-full max-w-3xl">
+        <Reveal>
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/10 px-3 py-1.5 text-xs font-medium text-teal-300">
           <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-teal-400 shadow-[0_0_8px_#14b8a6]" />
           AI voice interview studio
@@ -26,7 +29,9 @@ export function LandingHero() {
           Realistic voice-to-voice mock interviews with a dynamic AI interviewer, multi-agent
           evaluation across seven dimensions, and coaching that tracks your progress over time.
         </p>
+        </Reveal>
 
+        <Reveal delayMs={120}>
         <div className="mt-9 flex flex-wrap items-center gap-3">
           <AuthEntryButtonLink href={routes.createInterview} className="px-6 py-2.5 text-sm">
             Get started →
@@ -43,7 +48,9 @@ export function LandingHero() {
             See how it works
           </HashLink>
         </div>
+        </Reveal>
 
+        <Reveal delayMs={220}>
         <dl className="mt-14 grid max-w-lg grid-cols-3 gap-4 border-t border-[var(--border-glass)] pt-8">
           <div>
             <dt className="text-section-label">Interview types</dt>
@@ -70,16 +77,21 @@ export function LandingHero() {
             </dd>
           </div>
         </dl>
+        </Reveal>
         </div>
 
-        <GlowArt
-          src="/backgrounds/ai-core-hero.png"
-          width={1024}
-          height={721}
-          sizes="(min-width: 1024px) 34rem, 0px"
-          masked={false}
-          className="hidden w-full scale-110 justify-self-center lg:block [filter:brightness(0.88)_contrast(1.3)] [mask-image:radial-gradient(ellipse_62%_62%_at_50%_50%,#000_38%,transparent_80%)]"
-        />
+        <Reveal delayMs={150} className="hidden lg:block">
+          <TiltCard maxTiltDeg={6}>
+            <GlowArt
+              src="/backgrounds/ai-core-hero.png"
+              width={1024}
+              height={721}
+              sizes="(min-width: 1024px) 34rem, 0px"
+              masked={false}
+              className="w-full scale-110 justify-self-center [filter:brightness(0.88)_contrast(1.3)] [mask-image:radial-gradient(ellipse_62%_62%_at_50%_50%,#000_38%,transparent_80%)]"
+            />
+          </TiltCard>
+        </Reveal>
       </div>
     </section>
   );

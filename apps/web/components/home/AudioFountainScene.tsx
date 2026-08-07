@@ -4,25 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { CYAN, TEAL } from "@/components/visuals/scene-theme";
+import { usePrefersReducedMotion } from "@/components/visuals/usePrefersReducedMotion";
+
 const PARTICLE_COUNT = 1800;
 const STREAM_COUNT = 10;
 const BAR_COUNT = 72;
-const TEAL = new THREE.Color("#14b8a6");
-const CYAN = new THREE.Color("#22d3ee");
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  return reduced;
-}
 
 function DialogueCore({ frozen }: { frozen: boolean }) {
   const coreRef = useRef<THREE.Mesh>(null);
@@ -269,18 +256,39 @@ function FountainScene({ frozen }: { frozen: boolean }) {
 
 export function AudioFountainScene() {
   const reducedMotion = usePrefersReducedMotion();
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(true);
+
+  // The container spans the full page, but the scene is only visible behind
+  // the hero. Watch a viewport-height sentinel at the top and stop the render
+  // loop once the user scrolls past it, so it doesn't burn GPU further down.
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => setInView(entries.some((entry) => entry.isIntersecting)),
+      { threshold: 0, rootMargin: "25% 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const frozen = reducedMotion || !inView;
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div ref={sentinelRef} className="absolute inset-x-0 top-0 h-screen" />
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1628]/30 via-transparent to-[#0a1628]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_70%_45%,rgba(20,184,166,0.14),transparent_65%)]" />
       <Canvas
         className="pointer-events-none !absolute inset-0 h-full w-full"
         camera={{ position: [0, 0.5, 9], fov: 42 }}
         dpr={[1, 1.75]}
+        frameloop={frozen ? "demand" : "always"}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       >
-        <FountainScene frozen={reducedMotion} />
+        <FountainScene frozen={frozen} />
       </Canvas>
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628] via-[#0a1628]/70 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#0a1628] to-transparent" />

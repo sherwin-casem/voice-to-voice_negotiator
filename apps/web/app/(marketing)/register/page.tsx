@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -8,9 +9,13 @@ import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { FieldError, Input, Label } from "@/components/ui/FormControls";
-import { GlowArt } from "@/components/ui/GlowArt";
 import { useAppContext } from "@/context/AppProvider";
 import { routes, sanitizeNextPath } from "@/lib/routes";
+
+const VoiceOrbScene = dynamic(
+  () => import("@/components/visuals/VoiceOrbScene").then((mod) => mod.VoiceOrbScene),
+  { ssr: false },
+);
 
 function RegisterForm() {
   const router = useRouter();
@@ -120,23 +125,19 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <div className="relative">
-      <GlowArt
-        src="/backgrounds/progress-orb.png"
-        width={304}
-        height={191}
-        sizes="24rem"
-        className="absolute left-1/2 top-1/2 w-96 max-w-none -translate-x-1/2 -translate-y-1/2 opacity-40"
-      />
-      <div className="mb-8 text-center">
+      <VoiceOrbScene className="absolute left-1/2 top-1/2 h-[30rem] w-[30rem] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-60" />
+      <div className="relative mb-8 text-center">
         <h1 className="text-3xl font-semibold text-[var(--text-primary)]">Create your account</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           Get started with voice interviews and personalized evaluation.
         </p>
       </div>
-      <Suspense fallback={<Spinner label="Loading" />}>
-        <RegisterForm />
-      </Suspense>
-      <div className="mx-auto mt-6 max-w-md">
+      <div className="relative">
+        <Suspense fallback={<Spinner label="Loading" />}>
+          <RegisterForm />
+        </Suspense>
+      </div>
+      <div className="relative mx-auto mt-6 max-w-md">
         <Alert variant="info">Use a password of at least 8 characters.</Alert>
       </div>
     </div>

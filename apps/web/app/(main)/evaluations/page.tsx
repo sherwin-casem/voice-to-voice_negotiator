@@ -12,6 +12,7 @@ import { Card, CardDescription, CardHeading } from "@/components/ui/Card";
 import { GlassPanel } from "@/components/ui/GlassPanel";
 import { GlowArt } from "@/components/ui/GlowArt";
 import { MetricBar } from "@/components/ui/MetricBar";
+import { Reveal } from "@/components/visuals/Reveal";
 import { useProgressAnalysis } from "@/hooks/useProgressAnalysis";
 import { useSessionHistory } from "@/hooks/useSessionHistory";
 import { cn, formatDate } from "@/lib/format";
@@ -134,28 +135,39 @@ export default function EvaluationsPage() {
       ) : null}
 
       {isEmpty ? (
-        <GlassPanel className="border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-cyan-500/5 p-8 text-center">
-          <GlowArt
-            src="/backgrounds/progress-orb.png"
-            width={329}
-            height={199}
-            sizes="13rem"
-            className="mx-auto mb-4 w-52"
-          />
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">No practice sessions yet</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-muted)]">
-            Complete your first voice interview to unlock evaluation trends, dimension scores, and
-            session history.
-          </p>
-          <div className="mt-6">
-            <ButtonLink href={routes.createInterview}>Start your first interview</ButtonLink>
-          </div>
-        </GlassPanel>
+        <Reveal>
+          <GlassPanel className="relative overflow-hidden border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-cyan-500/5 p-8 text-center">
+            <GlowArt
+              src="/backgrounds/insight-sphere.png"
+              width={512}
+              height={512}
+              sizes="14rem"
+              className="mx-auto mb-4 w-56 animate-float-slow"
+            />
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">No practice sessions yet</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-muted)]">
+              Complete your first voice interview to unlock evaluation trends, dimension scores, and
+              session history.
+            </p>
+            <div className="mt-6">
+              <ButtonLink href={routes.createInterview}>Start your first interview</ButtonLink>
+            </div>
+          </GlassPanel>
+        </Reveal>
       ) : null}
 
       {hasTrends ? (
-        <Card className="mb-6" aria-labelledby="dimension-trends-title">
-          <CardHeading id="dimension-trends-title">Dimension trends</CardHeading>
+        <Reveal>
+          <Card className="relative mb-6 overflow-hidden" aria-labelledby="dimension-trends-title">
+            <GlowArt
+              src="/backgrounds/score-ring.png"
+              width={512}
+              height={512}
+              sizes="20rem"
+              className="pointer-events-none absolute -right-20 -top-24 hidden w-80 opacity-25 lg:block"
+            />
+            <div className="relative">
+              <CardHeading id="dimension-trends-title">Dimension trends</CardHeading>
           <CardDescription>
             Latest session scores compared to your previous average
             {progress?.sessions_analyzed
@@ -185,11 +197,14 @@ export default function EvaluationsPage() {
               );
             })}
           </ul>
-        </Card>
+            </div>
+          </Card>
+        </Reveal>
       ) : null}
 
       {hasSessions ? (
-        <Card aria-labelledby="recent-sessions-title">
+        <Reveal delayMs={90}>
+          <Card aria-labelledby="recent-sessions-title">
           <CardHeading id="recent-sessions-title">Recent sessions</CardHeading>
           <CardDescription>Your interview practice history, newest first.</CardDescription>
           <ul className="mt-4 divide-y divide-[var(--border-glass)]">
@@ -198,8 +213,10 @@ export default function EvaluationsPage() {
             ))}
           </ul>
         </Card>
+        </Reveal>
       ) : !isEmpty ? (
-        <Card aria-labelledby="recent-sessions-title">
+        <Reveal delayMs={90}>
+          <Card aria-labelledby="recent-sessions-title">
           <CardHeading id="recent-sessions-title">Recent sessions</CardHeading>
           <CardDescription>Your completed interviews will appear here.</CardDescription>
           <p className="mt-4 text-sm text-[var(--text-muted)]">
@@ -210,6 +227,7 @@ export default function EvaluationsPage() {
             to get started.
           </p>
         </Card>
+        </Reveal>
       ) : null}
     </>
   );

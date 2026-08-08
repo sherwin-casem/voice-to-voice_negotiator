@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/ButtonLink";
+import { GlowArt } from "@/components/ui/GlowArt";
+import { Reveal } from "@/components/visuals/Reveal";
 import { useAppContext } from "@/context/AppProvider";
 import { routes, SITE_NAV_LINKS } from "@/lib/routes";
 
@@ -10,10 +12,18 @@ export function LandingFooter() {
   const { isAuthenticated } = useAppContext();
 
   return (
-    <footer className="relative border-t border-[var(--border-glass)] bg-[var(--bg-deep)]">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+    <footer className="relative overflow-hidden border-t border-[var(--border-glass)] bg-[var(--bg-deep)]">
+      <GlowArt
+        src="/backgrounds/insight-sphere.png"
+        width={512}
+        height={512}
+        sizes="28rem"
+        className="absolute -left-32 top-1/2 hidden w-[28rem] -translate-y-1/2 opacity-20 lg:block"
+      />
+      <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6">
         {isAuthenticated ? (
-          <div className="glass-panel flex flex-col items-start justify-between gap-8 p-8 sm:flex-row sm:items-center">
+          <Reveal>
+            <div className="glass-panel flex flex-col items-start justify-between gap-8 p-8 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
                 Ready to practice out loud?
@@ -31,8 +41,10 @@ export function LandingFooter() {
               </ButtonLink>
             </div>
           </div>
+          </Reveal>
         ) : null}
 
+        <Reveal delayMs={isAuthenticated ? 90 : 0}>
         <div className={isAuthenticated ? "mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3" : "grid gap-8 sm:grid-cols-2 lg:grid-cols-3"}>
           <div>
             <p className="text-section-label">Product</p>
@@ -73,6 +85,7 @@ export function LandingFooter() {
             </p>
           </div>
         </div>
+        </Reveal>
       </div>
     </footer>
   );

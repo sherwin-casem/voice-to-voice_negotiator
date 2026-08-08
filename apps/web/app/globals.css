@@ -117,6 +117,28 @@ body {
   .animate-float-slower {
     animation: float-slow 11s ease-in-out infinite reverse;
   }
+
+  .hero-text-shimmer {
+    background-size: 200% auto;
+    animation: hero-shimmer 4s linear infinite;
+  }
+
+  .hero-text-shimmer-cyan {
+    background-size: 200% auto;
+    animation: hero-shimmer 4s linear infinite reverse;
+  }
+}
+
+@keyframes hero-shimmer {
+  0% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.25);
+  }
+  100% {
+    filter: brightness(1);
+  }
 }
 
 @keyframes float-slow {

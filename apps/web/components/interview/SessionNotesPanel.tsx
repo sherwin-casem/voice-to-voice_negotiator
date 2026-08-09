@@ -2,9 +2,9 @@ import { GlassPanel } from "@/components/ui/GlassPanel";
 
 export function SessionNotesPanel({ notes }: { notes: string[] }) {
   return (
-    <GlassPanel className="flex h-full flex-col p-5">
-      <h2 className="text-section-label mb-4">Session brief</h2>
-      <ul className="space-y-3">
+    <GlassPanel className="flex h-full max-h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5">
+      <h2 className="text-section-label mb-3 shrink-0">Session brief</h2>
+      <ul className="min-h-0 space-y-2.5 overflow-y-auto">
         {notes.map((note) => {
           const [label, ...rest] = note.split(": ");
           const value = rest.length > 0 ? rest.join(": ") : null;
@@ -27,7 +27,7 @@ export function SessionNotesPanel({ notes }: { notes: string[] }) {
           );
         })}
       </ul>
-      <div className="mt-5 border-t border-white/5 pt-4 lg:mt-auto">
+      <div className="mt-4 shrink-0 border-t border-white/5 pt-3 lg:mt-auto">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Quick tips
         </p>

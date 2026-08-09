@@ -48,22 +48,22 @@ export function InterviewerAvatar({
 
   return (
     <motion.div
-      className={cn("relative flex flex-col", className)}
+      className={cn("relative flex min-h-0 flex-col", className)}
       initial={reduceMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl border border-white/10 bg-[#060d18]",
+          "relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#060d18]",
           "shadow-[0_0_0_1px_rgba(20,184,166,0.08),0_24px_64px_rgba(0,0,0,0.45)]",
           isSpeaking && "ring-2 ring-teal-400/35",
           isListening && "ring-2 ring-cyan-400/30",
           isProcessing && "ring-2 ring-teal-500/20",
         )}
       >
-        {/* Cinematic stage — landscape frame so the portrait fills without letterboxing */}
-        <div className="relative aspect-[16/11] w-full sm:aspect-[16/10] lg:aspect-[16/10.5]">
+        {/* Viewport-capped stage — height-driven so mic controls stay on-screen */}
+        <div className="relative h-[min(42dvh,22rem)] w-full sm:h-[min(46dvh,26rem)] lg:h-[min(48dvh,28rem)] xl:h-[min(52dvh,32rem)]">
           <InterviewerCharacterPortrait
             state={state}
             audioLevel={audioLevel}
@@ -134,7 +134,7 @@ export function InterviewerAvatar({
         </div>
 
         {footer ? (
-          <div className="border-t border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md sm:px-4">
+          <div className="shrink-0 border-t border-white/10 bg-black/35 px-3 py-3 backdrop-blur-md sm:px-4">
             {footer}
           </div>
         ) : null}

@@ -5,8 +5,8 @@ import Image from "next/image";
 import type { InterviewerState } from "@/types/websocket";
 import { cn } from "@/lib/format";
 
-const RING_SIZES = ["92%", "74%", "56%"] as const;
-const RING_CENTER_Y = "52%";
+const RING_SIZES = ["88%", "70%", "52%"] as const;
+const RING_CENTER_Y = "54%";
 
 function portalRingClass(index: number, isActive: boolean) {
   return cn(
@@ -30,7 +30,7 @@ export function InterviewerCharacterPortrait({
   audioLevel: number;
   isRecording: boolean;
   className?: string;
-  /** Crop to fill the stage (avoids letterboxing in wide frames). */
+  /** Fit the full character into the stage (slight zoom-out for wide frames). */
   fillFrame?: boolean;
 }) {
   const isSpeaking = state === "speaking";
@@ -97,8 +97,9 @@ export function InterviewerCharacterPortrait({
             priority
             sizes="(max-width: 768px) 100vw, 720px"
             className={cn(
+              // Keep the full bust + portal in frame; cover+face-crop was over-zooming.
               fillFrame
-                ? "object-cover object-[50%_18%]"
+                ? "object-contain object-[center_58%] scale-[0.92]"
                 : "object-contain object-center",
             )}
           />

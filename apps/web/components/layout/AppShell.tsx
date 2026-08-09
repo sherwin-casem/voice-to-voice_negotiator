@@ -26,7 +26,12 @@ export function AppShell({
   const ambient = ambientVariant(pathname);
 
   return (
-    <div className="relative min-h-screen text-[var(--text-primary)]">
+    <div
+      className={cn(
+        "relative text-[var(--text-primary)]",
+        isImmersive ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen",
+      )}
+    >
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-teal-600 focus:px-3 focus:py-2 focus:text-white"
@@ -39,14 +44,18 @@ export function AppShell({
       <main
         id="main-content"
         className={cn(
-          "relative mx-auto",
-          isImmersive ? "max-w-[1400px] px-4 py-4 sm:px-6 sm:py-6" : "max-w-6xl px-4 py-8 sm:px-6",
+          "relative mx-auto w-full min-w-0",
+          isImmersive
+            ? "flex max-w-[1400px] min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto px-4 py-3 sm:px-6 sm:py-4"
+            : "max-w-6xl px-4 py-8 sm:px-6",
         )}
       >
         {ambient ? <AppAmbientBackground variant={ambient} /> : null}
         {!isImmersive ? <PreviewNoticeBanner /> : null}
-        <div className="relative">
-          <PageTransition>{children}</PageTransition>
+        <div className={cn("relative", isImmersive && "flex min-h-0 flex-1 flex-col")}>
+          <PageTransition className={isImmersive ? "flex min-h-0 flex-1 flex-col" : undefined}>
+            {children}
+          </PageTransition>
         </div>
       </main>
     </div>

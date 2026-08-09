@@ -12,6 +12,20 @@ const FeatureWaveScene = dynamic(
   { ssr: false },
 );
 
+function FlowStepCard({ step }: { step: (typeof PRODUCT_FLOW)[number] }) {
+  return (
+    <article className="glass-panel group relative flex h-full flex-col overflow-hidden p-5 transition-transform duration-300 ease-out hover:-translate-y-1 hover:border-teal-500/20 hover:bg-[var(--bg-panel-hover)] hover:shadow-[0_12px_32px_rgba(20,184,166,0.12)] motion-reduce:transform-none motion-reduce:transition-none">
+      <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-teal-500/10 blur-2xl transition-opacity group-hover:opacity-100" />
+      <div className="relative mb-3 flex h-9 w-9 items-center justify-center rounded-full border border-teal-500/30 bg-teal-500/10 text-sm font-semibold text-teal-300 shadow-[0_0_16px_rgba(20,184,166,0.2)]">
+        {step.step}
+      </div>
+      <p className="text-section-label">Step {step.step}</p>
+      <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{step.title}</h3>
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{step.detail}</p>
+    </article>
+  );
+}
+
 export function ProductFlowSection() {
   return (
     <section id="flow" className="relative scroll-mt-28 overflow-hidden border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/90">
@@ -45,15 +59,7 @@ export function ProductFlowSection() {
 
           {PRODUCT_FLOW.map((step, index) => (
             <Reveal as="li" key={step.step} delayMs={index * 90}>
-              <article className="glass-panel group relative flex h-full flex-col overflow-hidden p-5 transition-all duration-300 hover:-translate-y-1 hover:border-teal-500/20 hover:bg-[var(--bg-panel-hover)] hover:shadow-[0_12px_32px_rgba(20,184,166,0.12)]">
-                <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-teal-500/10 blur-2xl transition-opacity group-hover:opacity-100" />
-                <div className="relative mb-3 flex h-9 w-9 items-center justify-center rounded-full border border-teal-500/30 bg-teal-500/10 text-sm font-semibold text-teal-300 shadow-[0_0_16px_rgba(20,184,166,0.2)]">
-                  {step.step}
-                </div>
-                <p className="text-section-label">Step {step.step}</p>
-                <h3 className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{step.title}</h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-[var(--text-muted)]">{step.detail}</p>
-              </article>
+              <FlowStepCard step={step} />
             </Reveal>
           ))}
         </ol>

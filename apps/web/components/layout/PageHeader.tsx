@@ -1,3 +1,10 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeUp, reducedMotionVariants, transitionBase } from "@/lib/motion";
 import { cn } from "@/lib/format";
 
 interface PageHeaderProps {
@@ -8,14 +15,24 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, description, actions, className }: PageHeaderProps) {
+  const reduceMotion = usePrefersReducedMotion();
+  const [enter, setEnter] = useState(false);
+
+  useEffect(() => {
+    setEnter(true);
+  }, []);
+
   return (
-    <div
+    <motion.div
       className={cn(
         "mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
-    >
-      <div>
+      variants={reduceMotion ? reducedMotionVariants : fadeUp}
+      initial="hidden"
+      animate={enter ? "visible" : "hidden"}
+      transition={transitionBase}
+    >      <div>
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
           {title}
         </h1>
@@ -24,6 +41,6 @@ export function PageHeader({ title, description, actions, className }: PageHeade
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
-    </div>
+    </motion.div>
   );
 }

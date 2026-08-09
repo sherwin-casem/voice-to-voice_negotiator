@@ -1,5 +1,6 @@
 "use client";
 
+import { PageTransition } from "@/components/motion/PageTransition";
 import { SiteNav } from "@/components/navigation/SiteNav";
 import { PreviewNoticeBanner } from "@/components/ui/PreviewNotice";
 import { AppAmbientBackground } from "@/components/visuals/AppAmbientBackground";
@@ -44,7 +45,9 @@ export function AppShell({
       >
         {ambient ? <AppAmbientBackground variant={ambient} /> : null}
         {!isImmersive ? <PreviewNoticeBanner /> : null}
-        <div className="relative">{children}</div>
+        <div className="relative">
+          <PageTransition>{children}</PageTransition>
+        </div>
       </main>
     </div>
   );

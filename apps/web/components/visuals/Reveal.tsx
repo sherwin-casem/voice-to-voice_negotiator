@@ -1,58 +1,107 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { motion, type HTMLMotionProps } from "framer-motion";
+import { useEffect, useState } from "react";
 
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeUp, reducedMotionVariants, transitionBase } from "@/lib/motion";
 import { cn } from "@/lib/format";
 
+type RevealTag = "div" | "section" | "li" | "article" | "span";
+
+const motionTags = {
+  div: motion.div,
+  section: motion.section,
+  li: motion.li,
+  article: motion.article,
+  span: motion.span,
+} as const;
+
 /**
- * Scroll-entrance reveal driven by IntersectionObserver and the `.reveal`
- * CSS utilities in globals.css. Renders content immediately (SSR-safe) and
- * only animates once, the first time the element scrolls into view.
- * `prefers-reduced-motion` is handled in CSS, so no JS branch is needed.
+ * Scroll-entrance reveal powered by Framer Motion.
+ * Keeps the previous Reveal API so existing call sites keep working.
  */
 export function Reveal({
   children,
   className,
   delayMs = 0,
-  as: Tag = "div",
+  as: tag = "div",
 }: {
   children: React.ReactNode;
   className?: string;
-  /** Stagger offset for grouped items (e.g. cards in a grid). */
   delayMs?: number;
-  as?: "div" | "section" | "li" | "article" | "span";
+  as?: RevealTag;
 }) {
-  const ref = useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = useState(false);
+  const reduceMotion = usePrefersReducedMotion();
+  const MotionTag = motionTags[tag];
+
+  return (
+    <MotionTag
+      className={cn(className)}
+      variants={reduceMotion ? reducedMotionVariants : fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.15, margin: "0px 0px -6% 0px" }}
+      transition={{
+        ...transitionBase,
+        delay: reduceMotion ? 0 : delayMs / 1000,
+      }}
+    >
+      {children}
+    </MotionTag>
+  );
+}
+
+/** Stagger parent for hero / grids. Children should use `variants={fadeUp}`. */
+export function MotionStagger({
+  children,
+  className,
+  ...props
+}: HTMLMotionProps<"div">) {
+  const reduceMotion = usePrefersReducedMotion();
+  const [enter, setEnter] = useState(false);
 
   useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    // Elements already in the viewport on mount (above the fold) reveal
-    // immediately; everything else reveals on first intersection.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
+    setEnter(true);
   }, []);
 
   return (
-    <Tag
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ref={ref as any}
-      className={cn("reveal", visible && "reveal-visible", className)}
-      style={delayMs ? ({ "--reveal-delay": `${delayMs}ms` } as CSSProperties) : undefined}
+    <motion.div
+      className={className}
+      initial="hidden"
+      animate={enter ? "visible" : "hidden"}
+      variants={
+        reduceMotion
+          ? reducedMotionVariants
+          : {
+              hidden: {},
+              visible: {
+                transition: { staggerChildren: 0.1, delayChildren: 0.06 },
+              },
+            }
+      }
+      {...props}
     >
       {children}
-    </Tag>
+    </motion.div>
+  );
+}
+
+export function MotionItem({
+  children,
+  className,
+  ...props
+}: HTMLMotionProps<"div">) {
+  const reduceMotion = usePrefersReducedMotion();
+
+  return (
+    <motion.div
+      className={className}
+      variants={reduceMotion ? reducedMotionVariants : fadeUp}
+      transition={transitionBase}
+      {...props}
+    >
+      {children}
+    </motion.div>
   );
 }

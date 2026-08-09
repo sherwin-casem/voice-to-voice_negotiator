@@ -1,11 +1,7 @@
 "use client";
 
-
-
 import Link from "next/link";
-
 import { usePathname, useRouter } from "next/navigation";
-
 import { useState } from "react";
 
 
@@ -230,7 +226,9 @@ export function SiteNav({
 
   return (
 
-    <header className={shellClass}>
+    <header
+      className={cn(shellClass, variant === "floating" && "animate-nav-enter")}
+    >
 
       <div className={innerClass}>
 

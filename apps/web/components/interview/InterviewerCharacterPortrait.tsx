@@ -8,9 +8,6 @@ import { INTERVIEWER_PORTRAIT, staticAssetUrl } from "@/lib/static-assets";
 
 const portraitSrc = staticAssetUrl(INTERVIEWER_PORTRAIT.path, INTERVIEWER_PORTRAIT.version);
 
-const RING_SIZES = ["88%", "70%", "52%"] as const;
-const RING_CENTER_Y = "54%";
-
 function portalRingClass(index: number, isActive: boolean) {
   return cn(
     "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border",
@@ -33,7 +30,7 @@ export function InterviewerCharacterPortrait({
   audioLevel: number;
   isRecording: boolean;
   className?: string;
-  /** Fit the full character into the stage (slight zoom-out for wide frames). */
+  /** Fill the stage edge-to-edge (live interview window). */
   fillFrame?: boolean;
 }) {
   const isSpeaking = state === "speaking";
@@ -46,10 +43,9 @@ export function InterviewerCharacterPortrait({
 
   return (
     <div className={cn("relative h-full w-full overflow-hidden", className)} aria-hidden>
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-[#0a1628] to-slate-950" />
-
-      <div className="absolute inset-y-0 left-[4%] w-px bg-gradient-to-b from-transparent via-teal-400/25 to-transparent" />
-      <div className="absolute inset-y-0 right-[4%] w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent" />
+      {!fillFrame ? (
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-[#0a1628] to-slate-950" />
+      ) : null}
 
       <div
         className={cn(
@@ -58,33 +54,37 @@ export function InterviewerCharacterPortrait({
           isListening && "scale-[1.008]",
         )}
       >
-        <div
-          className={cn(
-            "absolute inset-0 transition-opacity duration-500",
-            isSpeaking && "opacity-100",
-            isListening && "opacity-95",
-            !isActive && "opacity-70",
-          )}
-          style={{
-            background: `
-              radial-gradient(circle at 50% ${RING_CENTER_Y}, rgba(20,184,166,0.22) 0%, transparent 46%),
-              radial-gradient(circle at 50% ${RING_CENTER_Y}, rgba(34,211,238,0.12) 0%, transparent 62%)
-            `,
-          }}
-        />
+        {!fillFrame ? (
+          <>
+            <div
+              className={cn(
+                "absolute inset-0 transition-opacity duration-500",
+                isSpeaking && "opacity-100",
+                isListening && "opacity-95",
+                !isActive && "opacity-70",
+              )}
+              style={{
+                background: `
+                  radial-gradient(circle at 50% 54%, rgba(20,184,166,0.22) 0%, transparent 46%),
+                  radial-gradient(circle at 50% 54%, rgba(34,211,238,0.12) 0%, transparent 62%)
+                `,
+              }}
+            />
 
-        {RING_SIZES.map((size, index) => (
-          <div
-            key={index}
-            className={portalRingClass(index, isActive)}
-            style={{
-              top: RING_CENTER_Y,
-              width: size,
-              height: size,
-              transform: `translate(-50%, -50%) scale(${isActive ? glowScale + index * 0.015 : 1})`,
-            }}
-          />
-        ))}
+            {(["88%", "70%", "52%"] as const).map((size, index) => (
+              <div
+                key={index}
+                className={portalRingClass(index, isActive)}
+                style={{
+                  top: "54%",
+                  width: size,
+                  height: size,
+                  transform: `translate(-50%, -50%) scale(${isActive ? glowScale + index * 0.015 : 1})`,
+                }}
+              />
+            ))}
+          </>
+        ) : null}
 
         <div
           className={cn(
@@ -102,20 +102,29 @@ export function InterviewerCharacterPortrait({
             unoptimized
             sizes="(max-width: 768px) 100vw, 720px"
             className={cn(
-              // Keep the full bust + portal in frame; cover+face-crop was over-zooming.
               fillFrame
-                ? "object-contain object-[center_58%] scale-[0.92]"
+                ? "object-cover object-[center_42%]"
                 : "object-contain object-center",
             )}
           />
 
-          <div
-            className="pointer-events-none absolute inset-0 mix-blend-color opacity-[0.14]"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(20,184,166,0.35) 0%, rgba(10,22,40,0.08) 50%, rgba(34,211,238,0.22) 100%)",
-            }}
-          />
+          {fillFrame ? (
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(6,13,24,0.35) 0%, transparent 28%, transparent 72%, rgba(6,13,24,0.45) 100%)",
+              }}
+            />
+          ) : (
+            <div
+              className="pointer-events-none absolute inset-0 mix-blend-color opacity-[0.14]"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(20,184,166,0.35) 0%, rgba(10,22,40,0.08) 50%, rgba(34,211,238,0.22) 100%)",
+              }}
+            />
+          )}
         </div>
       </div>
 

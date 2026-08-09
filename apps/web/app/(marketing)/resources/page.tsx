@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 import {
   CrossLinkGrid,
-  MarketingHero,
   MarketingSection,
 } from "@/components/marketing/MarketingSections";
+import { ResourcesHero } from "@/components/marketing/ResourcesHero";
 import {
   GettingStartedChecklist,
   ResourceGuideGrid,
@@ -13,7 +13,6 @@ import {
 import {
   GETTING_STARTED,
   RESOURCE_CROSS_LINKS,
-  RESOURCES_HERO,
   RESOURCE_GUIDES,
   VOICE_TIPS,
 } from "@/lib/marketing/resources-content";
@@ -26,10 +25,7 @@ export const metadata: Metadata = {
 export default function ResourcesPage() {
   return (
     <>
-      <MarketingHero
-        {...RESOURCES_HERO}
-        art={{ src: "/backgrounds/data-cubes.png", width: 307, height: 512 }}
-      />
+      <ResourcesHero />
 
       <MarketingSection
         eyebrow="Guides"

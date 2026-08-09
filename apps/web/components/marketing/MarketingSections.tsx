@@ -13,6 +13,7 @@ export function MarketingHero({
   primaryCta,
   secondaryCta,
   art,
+  visual,
   className,
 }: {
   eyebrow: string;
@@ -20,12 +21,33 @@ export function MarketingHero({
   description: string;
   primaryCta: { label: string; href: string };
   secondaryCta?: { label: string; href: string };
+  /** Static GlowArt PNG — prefer `visual` for transparent WebGL scenes. */
   art?: { src: string; width: number; height: number };
+  /** Custom right-column visual (WebGL scene, etc.). Takes precedence over `art`. */
+  visual?: React.ReactNode;
   className?: string;
 }) {
+  const sideVisual = visual ?? (
+    art ? (
+      <TiltCard>
+        {/* Soft teal wash + strong feather so PNG black boxes dissolve into navy */}
+        <div className="relative">
+          <div className="absolute inset-[14%] rounded-full bg-[radial-gradient(circle,rgba(20,184,166,0.16),transparent_70%)] blur-2xl" />
+          <GlowArt
+            src={art.src}
+            width={art.width}
+            height={art.height}
+            sizes="(min-width: 1280px) 18rem, 16rem"
+            className="relative w-64 animate-float-slow xl:w-72 [mask-image:radial-gradient(ellipse_58%_62%_at_50%_48%,#000_32%,transparent_78%)]"
+          />
+        </div>
+      </TiltCard>
+    ) : null
+  );
+
   return (
-    <section className={cn("mb-16", className)}>
-      <div className="flex items-center gap-12">
+    <section className={cn("relative mb-16", className)}>
+      <div className="relative flex items-center gap-10 lg:gap-14">
         <Reveal className="max-w-3xl flex-1">
           <p className="text-section-label">{eyebrow}</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
@@ -43,18 +65,9 @@ export function MarketingHero({
             ) : null}
           </div>
         </Reveal>
-        {art ? (
-          <Reveal delayMs={120} className="hidden shrink-0 lg:block">
-            <TiltCard>
-              <GlowArt
-                src={art.src}
-                width={art.width}
-                height={art.height}
-                sizes="(min-width: 1280px) 18rem, 16rem"
-                className="w-64 animate-float-slow xl:w-72"
-              />
-            </TiltCard>
-          </Reveal>
+        {/* Above-the-fold art: never wrap in Reveal (opacity:0) or it can stay invisible. */}
+        {sideVisual ? (
+          <div className="relative hidden shrink-0 lg:block">{sideVisual}</div>
         ) : null}
       </div>
     </section>

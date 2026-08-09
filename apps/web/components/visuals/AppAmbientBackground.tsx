@@ -27,7 +27,7 @@ export function AppAmbientBackground({
             src: "/backgrounds/voice-portal-booth.png",
             width: 1024,
             height: 576,
-            className: "left-1/2 top-[-4rem] w-[48rem] max-w-none -translate-x-1/2 opacity-25",
+            className: "left-1/2 top-[-4rem] w-[min(48rem,100%)] max-w-full -translate-x-1/2 opacity-25",
           }
         : {
             src: "/backgrounds/multi-agent-network.png",

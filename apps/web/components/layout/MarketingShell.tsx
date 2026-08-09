@@ -1,6 +1,7 @@
 "use client";
 
 import { LandingFooter } from "@/components/home/LandingFooter";
+import { PageTransition } from "@/components/motion/PageTransition";
 import { SiteNav } from "@/components/navigation/SiteNav";
 
 export function MarketingShell({ children }: { children: React.ReactNode }) {
@@ -16,7 +17,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
       <SiteNav variant="app" />
 
       <main id="main-content" className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </main>
 
       <LandingFooter />

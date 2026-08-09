@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import { cn } from "@/lib/format";
@@ -24,7 +26,10 @@ export function ButtonLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition-all",
+        "inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-medium transition-colors",
+        "transition-transform duration-200 ease-out",
+        "hover:scale-[1.02] active:scale-[0.98]",
+        "motion-reduce:transform-none motion-reduce:transition-none",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500",
         variants[variant],
         className,

@@ -30,6 +30,7 @@
   --color-border-glass: var(--border-glass);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif);
 }
 
 html {
@@ -118,6 +119,11 @@ body {
     animation: float-slow 11s ease-in-out infinite reverse;
   }
 
+  /* CSS-only entrance avoids Framer Motion SSR style hydration mismatches. */
+  .animate-nav-enter {
+    animation: nav-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   .hero-text-shimmer {
     background-size: 200% auto;
     animation: hero-shimmer 4s linear infinite;
@@ -151,6 +157,17 @@ body {
   }
 }
 
+@keyframes nav-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;
@@ -159,7 +176,8 @@ body {
   }
 
   .animate-float-slow,
-  .animate-float-slower {
+  .animate-float-slower,
+  .animate-nav-enter {
     animation: none;
   }
 }

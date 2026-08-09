@@ -9,7 +9,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <AppShell>
       <Suspense
         fallback={
-          <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="flex min-h-[40vh] flex-1 items-center justify-center">
             <Spinner label="Loading" />
           </div>
         }

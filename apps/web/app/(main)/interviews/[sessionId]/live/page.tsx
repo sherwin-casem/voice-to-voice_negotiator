@@ -2,6 +2,7 @@
 
 import type { InterviewSessionStatus, SessionResponse } from "@voice/shared";
 import { getInterviewerRole, INTERVIEW_TYPE_LABELS } from "@voice/shared";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -12,6 +13,7 @@ import { InterviewFunnelStepper } from "@/components/interview/InterviewFunnelSt
 import { InterviewerAvatar } from "@/components/interview/InterviewerAvatar";
 import { LiveTranscript } from "@/components/interview/LiveTranscript";
 import { MicControls } from "@/components/interview/MicControls";
+import { SessionNotesPanel } from "@/components/interview/SessionNotesPanel";
 import { PracticeModeBadge } from "@/components/ui/Badge";
 import { Alert, Spinner } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -25,16 +27,20 @@ import { endSession, getSession } from "@/lib/interview-api";
 
 function ConnectionTipsPanel() {
   return (
-    <GlassPanel className="p-5 lg:hidden">
-      <h2 className="text-section-label mb-4">Before you start</h2>
-      <ul className="space-y-2 text-sm text-[var(--text-muted)]">
+    <GlassPanel className="p-4 lg:hidden">
+      <h2 className="text-section-label mb-3">Before you start</h2>
+      <ul className="grid gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
         <li>Use headphones to reduce echo.</li>
         <li>Allow microphone access when prompted.</li>
         <li>Find a quiet space with stable internet.</li>
-        <li>Tap the mic button to record your answer.</li>
+        <li>Tap Start answer to record your response.</li>
       </ul>
     </GlassPanel>
   );
+}
+
+function isStartableSessionStatus(status: string | null | undefined): boolean {
+  return status === "configured" || status === "active";
 }
 
 export default function LiveInterviewPage() {
@@ -70,12 +76,19 @@ export default function LiveInterviewPage() {
 
   const applySessionPatch = useCallback(
     (patch: Partial<SessionResponse>) => {
-      if (!loadedSession) {
-        return;
-      }
-      setSessionPatch({ sessionId: loadedSession.id, patch });
+      setSessionPatch((previous) => {
+        const sessionKey = loadedSession?.id ?? previous?.sessionId ?? sessionId;
+        if (!sessionKey) {
+          return previous;
+        }
+        const mergedPatch = {
+          ...(previous?.sessionId === sessionKey ? previous.patch : {}),
+          ...patch,
+        };
+        return { sessionId: sessionKey, patch: mergedPatch };
+      });
     },
-    [loadedSession],
+    [loadedSession, sessionId],
   );
 
   const refreshSession = useCallback(async () => {
@@ -109,6 +122,9 @@ export default function LiveInterviewPage() {
 
   const voice = useVoiceInterview(sessionId, accessToken ?? "", {
     onSessionStatusChange: (status, questionCount) => {
+      if (status === "unknown") {
+        return;
+      }
       applySessionPatch({
         status: status as InterviewSessionStatus,
         question_count: questionCount,
@@ -195,8 +211,6 @@ export default function LiveInterviewPage() {
       await refreshSession();
       router.push(`/interviews/${sessionId}/results`);
     } catch {
-      // The WebSocket end timed out or the socket was already gone. Fall back
-      // to ending the session over REST so it does not stay stuck active.
       try {
         await endSession(sessionId);
         await refreshSession();
@@ -221,10 +235,54 @@ export default function LiveInterviewPage() {
     await voice.beginAnswer();
   }
 
+  const interviewNotStarted = !voice.isInterviewStarted;
+  const effectiveSessionStatus =
+    voice.voiceSessionStatus ?? session?.status ?? null;
+  const sessionAllowsStart = isStartableSessionStatus(effectiveSessionStatus);
   const canStartInterview =
-    voice.isSessionReady &&
-    !voice.isInterviewStarted &&
-    (session?.status === "configured" || session?.status === "active");
+    voice.isSessionReady && interviewNotStarted && sessionAllowsStart;
+  const isSessionFinished =
+    effectiveSessionStatus === "completed" ||
+    effectiveSessionStatus === "abandoned" ||
+    effectiveSessionStatus === "evaluation_failed";
+  const showStartInterview =
+    interviewNotStarted &&
+    session?.status !== "completing" &&
+    !isSessionFinished;
+
+  useEffect(() => {
+    if (isLoading || !session || !voice.isSessionReady) {
+      return;
+    }
+    if (effectiveSessionStatus === "created") {
+      router.replace(`/interviews/${sessionId}/setup`);
+    }
+  }, [
+    effectiveSessionStatus,
+    isLoading,
+    router,
+    session,
+    sessionId,
+    voice.isSessionReady,
+  ]);
+
+  const startButtonLabel = isStarting
+    ? "Starting…"
+    : !voice.isSessionReady
+      ? "Connecting…"
+      : !sessionAllowsStart
+        ? effectiveSessionStatus === "created"
+          ? "Complete setup"
+          : "Cannot start"
+        : "Start interview";
+
+  const startHelperText = !voice.isSessionReady
+    ? "Connecting to the interviewer…"
+    : !sessionAllowsStart
+      ? effectiveSessionStatus === "created"
+        ? "Finish setup before starting the live interview."
+        : "This session cannot be started in its current state."
+      : "Start the interview to begin the first question.";
 
   const canAnswer =
     voice.isInterviewStarted &&
@@ -232,9 +290,49 @@ export default function LiveInterviewPage() {
     (voice.answerPhase === "ready" ||
       voice.answerPhase === "recording" ||
       voice.answerPhase === "paused" ||
-      // Barge-in: answering while the interviewer is still speaking cancels
-      // the rest of the question audio.
       (voice.answerPhase === "locked" && voice.interviewerState === "speaking"));
+
+  const startInterviewButton = showStartInterview ? (
+    <Button
+      onClick={handleStartInterview}
+      disabled={!canStartInterview || isStarting}
+      className="min-w-[11rem] px-6 py-2.5 text-sm shadow-[0_0_28px_rgba(20,184,166,0.35)]"
+    >
+      {startButtonLabel}
+    </Button>
+  ) : null;
+
+  const micControls = voice.isInterviewStarted ? (
+    <MicControls
+      isEnabled={voice.isMicEnabled}
+      isRecording={voice.isRecording}
+      permissionDenied={voice.permissionDenied}
+      canAnswer={canAnswer}
+      onToggleMic={handleToggleMic}
+      onFinishAnswer={voice.finishAnswer}
+      disabled={false}
+      compact
+      embedded
+    />
+  ) : (
+    <div className="flex flex-col items-center gap-2 py-1">
+      {startInterviewButton}
+      <p className="text-center text-xs text-slate-400">
+        {startHelperText}
+        {effectiveSessionStatus === "created" && voice.isSessionReady ? (
+          <>
+            {" "}
+            <Link
+              href={`/interviews/${sessionId}/setup`}
+              className="font-medium text-teal-400 underline-offset-2 hover:text-teal-300 hover:underline"
+            >
+              Go to setup
+            </Link>
+          </>
+        ) : null}
+      </p>
+    </div>
+  );
 
   if (isLoading) {
     return <Spinner label="Loading live interview" />;
@@ -249,10 +347,10 @@ export default function LiveInterviewPage() {
   }
 
   return (
-    <div className="space-y-3 pb-24 lg:pb-4">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-          <h1 className="text-xl font-bold tracking-widest text-[var(--text-primary)] sm:text-2xl">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden pb-28 lg:gap-4 lg:pb-0">
+      <header className="flex shrink-0 flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-4">
+          <h1 className="text-lg font-bold tracking-[0.18em] text-[var(--text-primary)] sm:text-xl">
             MOCK INTERVIEW
           </h1>
           <ConnectionStatus state={voice.connectionState} />
@@ -260,15 +358,20 @@ export default function LiveInterviewPage() {
         <InterviewFunnelStepper
           current="live"
           sessionId={sessionId}
-          className="order-3 lg:order-none"
+          className="order-3 min-w-0 opacity-80 lg:order-none lg:justify-center"
         />
-        <div className="hidden flex-wrap items-center gap-2 lg:flex lg:justify-end">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
           <PracticeModeBadge />
-          {canStartInterview ? (
-            <Button onClick={handleStartInterview} disabled={isStarting}>
-              {isStarting ? "Starting…" : "Start"}
-            </Button>
-          ) : null}
+          <div className="hidden lg:contents">
+            {showStartInterview ? (
+              <Button
+                onClick={handleStartInterview}
+                disabled={!canStartInterview || isStarting}
+              >
+                {startButtonLabel}
+              </Button>
+            ) : null}
+          </div>
           {voice.isInterviewStarted ? (
             <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
               {isEnding ? "Ending…" : "End interview"}
@@ -278,7 +381,7 @@ export default function LiveInterviewPage() {
       </header>
 
       {(loadError || voice.errorMessage || voice.permissionDenied) && (
-        <div className="space-y-2">
+        <div className="shrink-0 space-y-2">
           {loadError ? <Alert variant="error">{loadError}</Alert> : null}
           {voice.errorMessage ? (
             <Alert variant="warning" title="Connection issue">
@@ -295,85 +398,61 @@ export default function LiveInterviewPage() {
 
       <ConnectionTipsPanel />
 
-      <div className="grid gap-4 lg:grid-cols-12 lg:items-start lg:gap-6">
-        <aside className="order-2 lg:order-none lg:col-span-3">
-          <GlassPanel className="h-full p-5">
-            <h2 className="text-section-label mb-4">Notes</h2>
-            <ul className="space-y-2 text-sm text-[var(--text-muted)]">
-              {notes.map((note) => (
-                <li key={note} className="flex gap-2">
-                  <span className="text-teal-500" aria-hidden="true">
-                    •
-                  </span>
-                  {note}
-                </li>
-              ))}
-            </ul>
-          </GlassPanel>
+      {/* Stage-first layout: center dominates; constrained so the page stays in-viewport */}
+      <div className="grid min-h-0 min-w-0 flex-1 items-stretch gap-3 lg:grid-cols-[220px_minmax(0,1fr)_200px] lg:gap-4 xl:grid-cols-[240px_minmax(0,1fr)_220px]">
+        <aside className="order-2 hidden min-h-0 min-w-0 lg:order-none lg:block">
+          <SessionNotesPanel notes={notes} />
         </aside>
 
-        <section className="order-1 space-y-4 lg:order-none lg:col-span-6">
+        <section className="order-1 flex min-h-0 min-w-0 flex-col gap-3 lg:order-none">
           <InterviewerAvatar
             state={voice.interviewerState}
             audioLevel={voice.audioLevel}
             isRecording={voice.isRecording}
             questionSequence={voice.currentQuestionSequence}
             interviewType={session?.interview_type}
+            footer={<div className="hidden lg:block">{micControls}</div>}
           />
           <CurrentQuestion
             question={voice.currentQuestion}
             sequenceNum={voice.currentQuestionSequence}
           />
-          <div className="hidden lg:block">
-            <MicControls
-              isEnabled={voice.isMicEnabled}
-              isRecording={voice.isRecording}
-              permissionDenied={voice.permissionDenied}
-              canAnswer={canAnswer}
-              onToggleMic={handleToggleMic}
-              onFinishAnswer={voice.finishAnswer}
-              disabled={!voice.isInterviewStarted}
-              compact
-            />
-          </div>
         </section>
 
-        <aside className="order-3 space-y-4 lg:col-span-3">
-          <GlassPanel className="p-5">
-            <CountdownTimer elapsedSeconds={elapsedSeconds} targetMinutes={targetMinutes} />
+        <aside className="order-3 min-w-0 space-y-3 lg:order-none lg:space-y-4">
+          <GlassPanel className="p-4 sm:p-5">
+            <CountdownTimer
+              elapsedSeconds={elapsedSeconds}
+              targetMinutes={targetMinutes}
+              running={isTimerRunning}
+            />
           </GlassPanel>
+          <div className="lg:hidden">
+            <SessionNotesPanel notes={notes} />
+          </div>
         </aside>
       </div>
 
-      <div className="lg:max-h-48 lg:overflow-y-auto">
+      <div className="shrink-0">
         <LiveTranscript entries={voice.transcript} />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/95 p-4 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-lg flex-col gap-3">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-glass)] bg-[var(--bg-deep)]/95 p-3 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-lg flex-col gap-2.5">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <PracticeModeBadge />
-            {canStartInterview ? (
-              <Button onClick={handleStartInterview} disabled={isStarting}>
-                {isStarting ? "Starting…" : "Start"}
-              </Button>
-            ) : null}
             {voice.isInterviewStarted ? (
-              <Button variant="secondary" onClick={handleEndInterview} disabled={isEnding}>
+              <Button
+                variant="secondary"
+                onClick={handleEndInterview}
+                disabled={isEnding}
+                className="px-4 py-2 text-sm"
+              >
                 {isEnding ? "Ending…" : "End"}
               </Button>
             ) : null}
           </div>
-          <MicControls
-            isEnabled={voice.isMicEnabled}
-            isRecording={voice.isRecording}
-            permissionDenied={voice.permissionDenied}
-            canAnswer={canAnswer}
-            onToggleMic={handleToggleMic}
-            onFinishAnswer={voice.finishAnswer}
-            disabled={!voice.isInterviewStarted}
-            compact
-          />
+          {micControls}
         </div>
       </div>
     </div>

@@ -49,6 +49,8 @@ export interface VoiceInterviewState {
   currentQuestionSequence: number | null;
   errorMessage: string | null;
   isSessionReady: boolean;
+  /** Authoritative session status from the server's session.ready event. */
+  voiceSessionStatus: string | null;
   isInterviewStarted: boolean;
   isRecording: boolean;
   isMicEnabled: boolean;
@@ -77,6 +79,7 @@ export function useVoiceInterview(
   const [currentQuestionSequence, setCurrentQuestionSequence] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSessionReady, setIsSessionReady] = useState(false);
+  const [voiceSessionStatus, setVoiceSessionStatus] = useState<string | null>(null);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMicEnabled, setIsMicEnabled] = useState(false);
@@ -216,13 +219,12 @@ export function useVoiceInterview(
 
       switch (type) {
         case WS_EVENTS.server.sessionReady: {
+          const status = String(payload.status ?? "unknown");
           setConnectionState("connected");
           setIsSessionReady(true);
+          setVoiceSessionStatus(status);
           questionCountRef.current = Number(payload.question_count ?? 0);
-          optionsRef.current.onSessionStatusChange?.(
-            String(payload.status ?? "unknown"),
-            questionCountRef.current,
-          );
+          optionsRef.current.onSessionStatusChange?.(status, questionCountRef.current);
           appendSystemMessage("Voice session connected.");
           if (isInterviewStartedRef.current) {
             // Reconnected mid-interview: re-send session.start so the server
@@ -371,6 +373,7 @@ export function useVoiceInterview(
     setConnectionState("connecting");
     setErrorMessage(null);
     setIsSessionReady(false);
+    setVoiceSessionStatus(null);
 
     const client = new InterviewWebSocket(sessionId, () => fetchWsTicket(sessionId));
     clientRef.current = client;
@@ -551,6 +554,7 @@ export function useVoiceInterview(
     currentQuestionSequence,
     errorMessage,
     isSessionReady,
+    voiceSessionStatus,
     isInterviewStarted,
     isRecording,
     isMicEnabled,

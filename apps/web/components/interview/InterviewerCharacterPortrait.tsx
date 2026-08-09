@@ -4,6 +4,9 @@ import Image from "next/image";
 
 import type { InterviewerState } from "@/types/websocket";
 import { cn } from "@/lib/format";
+import { INTERVIEWER_PORTRAIT, staticAssetUrl } from "@/lib/static-assets";
+
+const portraitSrc = staticAssetUrl(INTERVIEWER_PORTRAIT.path, INTERVIEWER_PORTRAIT.version);
 
 const RING_SIZES = ["88%", "70%", "52%"] as const;
 const RING_CENTER_Y = "54%";
@@ -91,10 +94,12 @@ export function InterviewerCharacterPortrait({
           )}
         >
           <Image
-            src="/interviewer-portrait.png"
+            key={portraitSrc}
+            src={portraitSrc}
             alt=""
             fill
             priority
+            unoptimized
             sizes="(max-width: 768px) 100vw, 720px"
             className={cn(
               // Keep the full bust + portal in frame; cover+face-crop was over-zooming.

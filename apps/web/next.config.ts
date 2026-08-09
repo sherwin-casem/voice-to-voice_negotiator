@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },
+      {
+        // Replaceable marketing/interview art — avoid sticky browser caches in dev.
+        source: "/interviewer-portrait.png",
+        headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }],
+      },
     ];
   },
 };
